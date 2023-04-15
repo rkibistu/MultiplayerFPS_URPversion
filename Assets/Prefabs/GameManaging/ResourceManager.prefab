@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6587058278640996
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6587058278641001}
+  - component: {fileID: 6587058278640998}
+  - component: {fileID: 6587058278640999}
+  m_Layer: 0
+  m_Name: ResourceManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6587058278641001
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6587058278640996}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 346.48718, y: -35.22151, z: 210.82712}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6587058278640998
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6587058278640996}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9cb5a9d3bfb11c845ab807855d65cdd7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gameTypes:
+  - {fileID: 11400000, guid: fe6d16c939f1b9c4b9f5837e43e6afc2, type: 2}
+  - {fileID: 11400000, guid: 116a5081f5aca054ba911abac97a80fc, type: 2}
+  mapDefinitions:
+  - {fileID: 11400000, guid: 222a67320437e0e498e23bbdd8dbc25b, type: 2}
+  weaponPrefabs:
+  - {fileID: 2125923974318146491, guid: a561b6cd6d166734a94c590cec760a2b, type: 3}
+  - {fileID: 2125923974318146491, guid: 00ef4399a7351df4bb1177199300cb19, type: 3}
+  - {fileID: 8296325365027917994, guid: 5f332a46d0a72af4a819c07baecd7445, type: 3}
+  - {fileID: 2125923974318146491, guid: b1f0e48e25727d54fb09ec6b69fb9876, type: 3}
+  - {fileID: 2125923974318146491, guid: ea2af905662b88548bd1f4d8e85cb93e, type: 3}
+  - {fileID: 1284231186346401310, guid: 67fd79e0451a35d4e8de57a3d942938f, type: 3}
+  characterModels:
+  - {fileID: 11400000, guid: cd0921ecb72131e4cac2cd911455c698, type: 2}
+  - {fileID: 11400000, guid: c575cb09ff7d77e4194e4d61118747a1, type: 2}
+  - {fileID: 11400000, guid: f6225168a8418474a8ddbb1b171d9054, type: 2}
+  AfterRoundMenuScene: 2
+--- !u!114 &6587058278640999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6587058278640996}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa21ec83c20373c4fbc9df8b1ac07362, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  startEnabled: 1
