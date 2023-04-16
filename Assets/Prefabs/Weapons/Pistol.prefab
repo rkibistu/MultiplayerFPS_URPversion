@@ -4026,7 +4026,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _interpolationDataSource: 0
   _priority: 5
-  _fireParticle: {fileID: 1067724143266150, guid: 3ca3360192844644c8b25267ca5f4c64,
+  _fireParticle: {fileID: 1670457245891842, guid: 8a86e4fcadab53a47a753908c7bf7ea1,
     type: 3}
   _fireParticleReturnTime: 10
   _fireAudioEffectsRoot: {fileID: 310818573871823364}

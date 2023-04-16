@@ -728,7 +728,7 @@ MonoBehaviour:
   SimulationBehaviours: []
 --- !u!95 &2662441261812480736
 Animator:
-  serializedVersion: 4
+  serializedVersion: 5
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -745,7 +745,7 @@ Animator:
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorControllerStateOnDisable: 0
+  m_KeepAnimatorStateOnDisable: 0
 --- !u!114 &1736287711397963510
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -763,7 +763,8 @@ MonoBehaviour:
   _weaponSlot: 2
   _displayName: Sniper
   _icon: {fileID: 21300000, guid: 48e42f888fac81d479455e32df14b057, type: 3}
-  _pickableWeaponPrefab: {fileID: 1888223850047887289, guid: 17d912efd3af17e4ea12b95649342e8b, type: 3}
+  _pickableWeaponPrefab: {fileID: 1888223850047887289, guid: 17d912efd3af17e4ea12b95649342e8b,
+    type: 3}
   _damageGrenadeMagazine: {fileID: 1801477513288559407}
   _smokeGrenadeMagazine: {fileID: 8595034070635261828}
 --- !u!114 &-2108805551044901270
@@ -2506,7 +2507,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _interpolationDataSource: 0
   _priority: 10
-  _projectilePrefab: {fileID: 8155363142852061038, guid: 56b4e4dca8f94c0459a089927564237b, type: 3}
+  _projectilePrefab: {fileID: 8155363142852061038, guid: 56b4e4dca8f94c0459a089927564237b,
+    type: 3}
   _projectilesPerShot: 1
   _dispersion: 1
 --- !u!114 &7206824051783856308
@@ -2523,7 +2525,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _interpolationDataSource: 0
   _priority: 5
-  _fireParticle: {fileID: 3524782899799234181, guid: 2317ee30686598444b1c6df4d5bab43e, type: 3}
+  _fireParticle: {fileID: 1587571097680891626, guid: caf1bddb17f50d049846bbabb1e480ac,
+    type: 3}
   _fireParticleReturnTime: 10
   _fireAudioEffectsRoot: {fileID: 8023851059632945770}
   _fireSound:
@@ -3232,7 +3235,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _interpolationDataSource: 0
   _priority: 10
-  _projectilePrefab: {fileID: 6898088108902662735, guid: 247265ff6d1517e4db06094c020e046c, type: 3}
+  _projectilePrefab: {fileID: 6898088108902662735, guid: 247265ff6d1517e4db06094c020e046c,
+    type: 3}
   _projectilesPerShot: 1
   _dispersion: 1
 --- !u!114 &7132607385818720383
@@ -3249,7 +3253,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _interpolationDataSource: 0
   _priority: 5
-  _fireParticle: {fileID: 3524782899799234181, guid: 2317ee30686598444b1c6df4d5bab43e, type: 3}
+  _fireParticle: {fileID: 3524782899799234181, guid: 2317ee30686598444b1c6df4d5bab43e,
+    type: 3}
   _fireParticleReturnTime: 10
   _fireAudioEffectsRoot: {fileID: 8023851059632945770}
   _fireSound:
@@ -3379,7 +3384,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _interpolationDataSource: 0
   _priority: 10
-  _projectilePrefab: {fileID: 6898088108902662735, guid: 9607ea54d72a96240a991e3cbcb8e5e2, type: 3}
+  _projectilePrefab: {fileID: 6898088108902662735, guid: 9607ea54d72a96240a991e3cbcb8e5e2,
+    type: 3}
   _projectilesPerShot: 1
   _dispersion: 1
 --- !u!114 &8607719384681397751
@@ -3396,7 +3402,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _interpolationDataSource: 0
   _priority: 5
-  _fireParticle: {fileID: 3524782899799234181, guid: 2317ee30686598444b1c6df4d5bab43e, type: 3}
+  _fireParticle: {fileID: 3524782899799234181, guid: 2317ee30686598444b1c6df4d5bab43e,
+    type: 3}
   _fireParticleReturnTime: 10
   _fireAudioEffectsRoot: {fileID: 8023851059632945770}
   _fireSound:

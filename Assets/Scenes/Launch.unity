@@ -185,6 +185,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5686990450172187526, guid: ebab2a2cf958cca44ad3b986fe5ea92e,
+        type: 3}
+      propertyPath: near clip plane
+      value: 0.01
+      objectReference: {fileID: 0}
     - target: {fileID: 5686990450172187641, guid: ebab2a2cf958cca44ad3b986fe5ea92e,
         type: 3}
       propertyPath: m_Name
@@ -216,6 +221,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   startEnabled: 1
+--- !u!20 &175299951 stripped
+Camera:
+  m_CorrespondingSourceObject: {fileID: 5686990450172187526, guid: ebab2a2cf958cca44ad3b986fe5ea92e,
+    type: 3}
+  m_PrefabInstance: {fileID: 82807206}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -1237,6 +1248,6 @@ PrefabInstance:
         type: 3}
       propertyPath: _camera
       value: 
-      objectReference: {fileID: 330585545}
+      objectReference: {fileID: 175299951}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7ca07c74fc10b1b4297f2ec188c18d58, type: 3}
