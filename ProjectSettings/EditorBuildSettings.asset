@@ -17,4 +17,10 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/DebugMap.unity
     guid: cc93f7124e0af604f90020a5e588c862
+  - enabled: 1
+    path: Assets/Scenes/FirstMap.unity
+    guid: 82f690c8cc493b24cbb1bb840f779fbf
+  - enabled: 1
+    path: Assets/Scenes/AncientVillage.unity
+    guid: 3ab5e0112eba598479eaa7a3739be153
   m_configObjects: {}

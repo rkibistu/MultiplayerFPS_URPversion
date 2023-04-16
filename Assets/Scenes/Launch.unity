@@ -939,6 +939,20 @@ PrefabInstance:
       propertyPath: m_Name
       value: ResourceManager
       objectReference: {fileID: 0}
+    - target: {fileID: 6587058278640998, guid: 03af67793be960440bd30cfd063ded4f, type: 3}
+      propertyPath: mapDefinitions.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6587058278640998, guid: 03af67793be960440bd30cfd063ded4f, type: 3}
+      propertyPath: mapDefinitions.Array.data[1]
+      value: 
+      objectReference: {fileID: 11400000, guid: 54e82dd7e7076a04ebb05e3baaf3064f,
+        type: 2}
+    - target: {fileID: 6587058278640998, guid: 03af67793be960440bd30cfd063ded4f, type: 3}
+      propertyPath: mapDefinitions.Array.data[2]
+      value: 
+      objectReference: {fileID: 11400000, guid: e72133d727b305c4597e4e4554763d18,
+        type: 2}
     - target: {fileID: 6587058278641001, guid: 03af67793be960440bd30cfd063ded4f, type: 3}
       propertyPath: m_RootOrder
       value: 5
