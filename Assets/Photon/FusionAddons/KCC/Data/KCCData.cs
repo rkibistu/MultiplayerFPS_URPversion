@@ -30,7 +30,7 @@ namespace Fusion.KCC
 		public float Time;
 
 		/// <summary>
-		/// Partial delta time, variable if CCD is active. Valid range is &lt;<c>0.0f, UnscaledDeltaTime</c>&gt;
+		/// Partial delta time, variable if CCD is active. Valid range is (<c>0.0f, UnscaledDeltaTime</c>&gt;
 		/// </summary>
 		public float DeltaTime;
 
@@ -181,24 +181,14 @@ namespace Fusion.KCC
 		public Vector3 Gravity;
 
 		/// <summary>
-		/// Maximum angle between KCC up direction and ground normal (depenetration vector) in degrees. Valid range is &lt;0, 90&gt;. Default is 75.
+		/// Maximum angle between KCC up direction and ground depenetration normal in degrees. Valid range is &lt;0, 90&gt;
 		/// </summary>
 		public float MaxGroundAngle;
 
 		/// <summary>
-		/// Maximum angle between KCC up direction and wall surface (perpendicular to depenetration vector) in degrees. Valid range is &lt;0, MaxGroundAngle&gt; Default is 5.
+		/// Maximum angle between KCC up direction and wall depenetration normal in degrees. Valid range is &lt;0, 90&gt;
 		/// </summary>
 		public float MaxWallAngle;
-
-		/// <summary>
-		/// Maximum angle between KCC up direction and hang surface (perpendicular to depenetration vector) in degrees. Valid range is &lt;MaxWallAngle, 90&gt; Default is 30.
-		/// </summary>
-		public float MaxHangAngle;
-
-		/// <summary>
-		/// Single Move/CCD step is split into multiple smaller sub-steps which results in higher overall depenetration quality.
-		/// </summary>
-		public int MaxMoveSteps;
 
 		/// <summary>
 		/// Velocity from external sources, one-time effect - reseted on the end of <c>Move()</c> call to prevent subsequent applications in render, ignoring <c>Mass</c>, example usage - jump pad
@@ -219,11 +209,6 @@ namespace Fusion.KCC
 		/// Force from external sources, continuous effect - value remains same for subsequent applications in render, affected by Mass, example usage - attractor
 		/// </summary>
 		public Vector3 ExternalForce;
-
-		/// <summary>
-		/// Absolute position delta which is consumed by single move. It can also be set from ProcessPhysicsQuery and still consumed by currently executed move (useful for depenetration corrections)
-		/// </summary>
-		public Vector3 ExternalDelta;
 
 		/// <summary>
 		/// Speed used to calculate <c>KinematicSpeed</c>
@@ -336,28 +321,11 @@ namespace Fusion.KCC
 		public float GroundAngle;
 
 		/// <summary>
-		/// Collection of networked collisions. Represents colliders the KCC interacts with.
-		/// Only objects with NetworkObject component are stored for compatibility with local prediction.
+		/// Collections of objects KCC interacts with
 		/// </summary>
 		public readonly KCCCollisions Collisions = new KCCCollisions();
-
-		/// <summary>
-		/// Collection of manually registered modifiers (for example processors) the KCC interacts with.
-		/// Only objects with NetworkObject component are stored for compatibility with local prediction.
-		/// </summary>
-		public readonly KCCModifiers Modifiers = new KCCModifiers();
-
-		/// <summary>
-		/// Collection of ignored colliders.
-		/// Only objects with NetworkObject component are stored for compatibility with local prediction.
-		/// </summary>
-		public readonly KCCIgnores Ignores = new KCCIgnores();
-
-		/// <summary>
-		/// Collection of colliders/triggers the KCC overlaps (radius + extent).
-		/// This collection is not synchronized! All objects are stored, NetworkObject component is not needed, only local history is supported.
-		/// </summary>
-		public readonly KCCHits Hits = new KCCHits();
+		public readonly KCCModifiers  Modifiers  = new KCCModifiers();
+		public readonly KCCIgnores    Ignores    = new KCCIgnores();
 
 		// PRIVATE MEMBERS
 
@@ -391,7 +359,6 @@ namespace Fusion.KCC
 			Collisions.Clear(true);
 			Modifiers.Clear(true);
 			Ignores.Clear(true);
-			Hits.Clear(true);
 		}
 
 		public void CopyFromOther(KCCData other)
@@ -413,13 +380,10 @@ namespace Fusion.KCC
 			Gravity                      = other.Gravity;
 			MaxGroundAngle               = other.MaxGroundAngle;
 			MaxWallAngle                 = other.MaxWallAngle;
-			MaxHangAngle                 = other.MaxHangAngle;
-			MaxMoveSteps                 = other.MaxMoveSteps;
 			ExternalVelocity             = other.ExternalVelocity;
 			ExternalAcceleration         = other.ExternalAcceleration;
 			ExternalImpulse              = other.ExternalImpulse;
 			ExternalForce                = other.ExternalForce;
-			ExternalDelta                = other.ExternalDelta;
 
 			KinematicSpeed               = other.KinematicSpeed;
 			KinematicTangent             = other.KinematicTangent;
@@ -446,7 +410,6 @@ namespace Fusion.KCC
 			Collisions.CopyFromOther(other.Collisions);
 			Modifiers.CopyFromOther(other.Modifiers);
 			Ignores.CopyFromOther(other.Ignores);
-			Hits.CopyFromOther(other.Hits);
 
 			CopyUserDataFromOther(other);
 		}

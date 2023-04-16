@@ -10,11 +10,11 @@ namespace Fusion.KCC.Editor
 	{
 		// PRIVATE MEMBERS
 
-		private static bool _processorsStackFoldout = true;
-		private static bool _collisionsFoldout      = false;
-		private static bool _modifiersFoldout       = false;
-		private static bool _ignoresFoldout         = false;
-		private static bool _hitsFoldout            = false;
+		private static bool _processorsStackFoldout  = true;
+		private static bool _trackedCollidersFoldout = false;
+		private static bool _collisionsFoldout       = false;
+		private static bool _modifiersFoldout        = false;
+		private static bool _ignoresFoldout          = false;
 
 		private static EKCCStage[] _traceStages = new EKCCStage[]
 		{
@@ -79,22 +79,22 @@ namespace Fusion.KCC.Editor
 			{
 				EditorGUILayout.BeginVertical();
 				{
-					if (DrawButton("Input Authority",   kcc.HasInputAuthority         == true, enabledBackgroundColor,         disabledBackgroundColor) == true) {}
-					if (DrawButton("Fixed Data",        kccDebug.UseFixedData         == true, Color.yellow,                   disabledBackgroundColor) == true) { kccDebug.UseFixedData         = true;                           }
-					if (DrawButton("Path",              kccDebug.ShowPath             == true, KCCDebug.RenderPathColor,       disabledBackgroundColor) == true) { kccDebug.ShowPath             = !kccDebug.ShowPath;             }
-					if (DrawButton("Ground Snapping",   kccDebug.ShowGroundSnapping   == true, KCCDebug.GroundSnapingColor,    disabledBackgroundColor) == true) { kccDebug.ShowGroundSnapping   = !kccDebug.ShowGroundSnapping;   }
-					if (DrawButton("Ground Normal",     kccDebug.ShowGroundNormal     == true, KCCDebug.GroundNormalColor,     disabledBackgroundColor) == true) { kccDebug.ShowGroundNormal     = !kccDebug.ShowGroundNormal;     }
-					if (DrawButton("Kinematic Tangent", kccDebug.ShowKinematicTangent == true, KCCDebug.KinematicTangentColor, disabledBackgroundColor) == true) { kccDebug.ShowKinematicTangent = !kccDebug.ShowKinematicTangent; }
+					if (DrawButton("Input Authority",   kcc.HasInputAuthority         == true, enabledBackgroundColor, disabledBackgroundColor) == true) {}
+					if (DrawButton("Fixed Data",        kccDebug.UseFixedData         == true, Color.yellow,           disabledBackgroundColor) == true) { kccDebug.UseFixedData         = true;                           }
+					if (DrawButton("Path",              kccDebug.ShowPath             == true, enabledBackgroundColor, disabledBackgroundColor) == true) { kccDebug.ShowPath             = !kccDebug.ShowPath;             }
+					if (DrawButton("Ground Snapping",   kccDebug.ShowGroundSnapping   == true, enabledBackgroundColor, disabledBackgroundColor) == true) { kccDebug.ShowGroundSnapping   = !kccDebug.ShowGroundSnapping;   }
+					if (DrawButton("Ground Normal",     kccDebug.ShowGroundNormal     == true, enabledBackgroundColor, disabledBackgroundColor) == true) { kccDebug.ShowGroundNormal     = !kccDebug.ShowGroundNormal;     }
+					if (DrawButton("Kinematic Tangent", kccDebug.ShowKinematicTangent == true, enabledBackgroundColor, disabledBackgroundColor) == true) { kccDebug.ShowKinematicTangent = !kccDebug.ShowKinematicTangent; }
 				}
 				EditorGUILayout.EndVertical();
 				EditorGUILayout.BeginVertical();
 				{
-					if (DrawButton("State Authority", kcc.HasStateAuthority      == true,  enabledBackgroundColor,      disabledBackgroundColor) == true) {}
-					if (DrawButton("Render Data",     kccDebug.UseFixedData      == false, Color.yellow,                disabledBackgroundColor) == true) { kccDebug.UseFixedData      = false;                       }
-					if (DrawButton("Grounding",       kccDebug.ShowGrounding     == true,  KCCDebug.IsGroundedColor,    disabledBackgroundColor) == true) { kccDebug.ShowGrounding     = !kccDebug.ShowGrounding;     }
-					if (DrawButton("Stepping Up",     kccDebug.ShowSteppingUp    == true,  KCCDebug.IsSteppingUpColor,  disabledBackgroundColor) == true) { kccDebug.ShowSteppingUp    = !kccDebug.ShowSteppingUp;    }
-					if (DrawButton("Ground Tangent",  kccDebug.ShowGroundTangent == true,  KCCDebug.GroundTangentColor, disabledBackgroundColor) == true) { kccDebug.ShowGroundTangent = !kccDebug.ShowGroundTangent; }
-					if (DrawButton("Logs",            kccDebug.EnableLogs        == true,  enabledBackgroundColor,      disabledBackgroundColor) == true) { kccDebug.EnableLogs        = !kccDebug.EnableLogs;        }
+					if (DrawButton("State Authority", kcc.HasStateAuthority      == true,  enabledBackgroundColor, disabledBackgroundColor) == true) {}
+					if (DrawButton("Render Data",     kccDebug.UseFixedData      == false, Color.yellow,           disabledBackgroundColor) == true) { kccDebug.UseFixedData      = false;                       }
+					if (DrawButton("Grounding",       kccDebug.ShowGrounding     == true,  enabledBackgroundColor, disabledBackgroundColor) == true) { kccDebug.ShowGrounding     = !kccDebug.ShowGrounding;     }
+					if (DrawButton("Stepping Up",     kccDebug.ShowSteppingUp    == true,  enabledBackgroundColor, disabledBackgroundColor) == true) { kccDebug.ShowSteppingUp    = !kccDebug.ShowSteppingUp;    }
+					if (DrawButton("Ground Tangent",  kccDebug.ShowGroundTangent == true,  enabledBackgroundColor, disabledBackgroundColor) == true) { kccDebug.ShowGroundTangent = !kccDebug.ShowGroundTangent; }
+					if (DrawButton("Logs",            kccDebug.EnableLogs        == true,  enabledBackgroundColor, disabledBackgroundColor) == true) { kccDebug.EnableLogs        = !kccDebug.EnableLogs;        }
 				}
 				EditorGUILayout.EndVertical();
 			}
@@ -111,7 +111,6 @@ namespace Fusion.KCC.Editor
 
 			KCCData data = kccDebug.UseFixedData == true ? kcc.FixedData : kcc.RenderData;
 
-			EditorGUILayout.LabelField("Dynamic Word Count", kcc.DynamicWordCount.Value.ToString());
 			EditorGUILayout.LabelField("Driver", kcc.Driver.ToString());
 			EditorGUILayout.Toggle("Has Manual Update", kcc.HasManualUpdate);
 			EditorGUILayout.Toggle("Was Grounded", data.WasGrounded);
@@ -124,7 +123,7 @@ namespace Fusion.KCC.Editor
 			EditorGUILayout.LabelField("Real Speed", data.RealSpeed.ToString("0.00"));
 			EditorGUILayout.LabelField("Ground Angle", data.GroundAngle.ToString("0.00°"));
 			EditorGUILayout.LabelField("Ground Distance", data.IsGrounded == true ? data.GroundDistance.ToString("F6") : "N/A");
-			EditorGUILayout.LabelField("Collision Hits", data.Hits.Count.ToString());
+			EditorGUILayout.LabelField("Physics Contacts", kcc.PhysicsContacts.ToString());
 			EditorGUILayout.LabelField("Collision Queries", $"{kcc.Statistics.OverlapQueries.ToString()} / {kcc.Statistics.RaycastQueries.ToString()} / {kcc.Statistics.ShapecastQueries.ToString()}");
 			EditorGUILayout.LabelField("Prediction Error", kcc.PredictionError.magnitude.ToString("F6"));
 			EditorGUILayout.EnumFlagsField("Active Features", kcc.ActiveFeatures);
@@ -145,14 +144,14 @@ namespace Fusion.KCC.Editor
 
 					if (processor != null)
 					{
-						if (GUILayout.Button($"{processor.gameObject.name}\n{processor.GetType().Name}") == true)
+						if (GUILayout.Button($"{processor.gameObject.name}\n({processor.GetType().Name})") == true)
 						{
 							EditorGUIUtility.PingObject(processor.gameObject);
 						}
 					}
 					else if (provider != null)
 					{
-						if (GUILayout.Button($"{provider.gameObject.name}\n{provider.GetType().Name}") == true)
+						if (GUILayout.Button($"{provider.gameObject.name}\n({provider.GetType().Name})") == true)
 						{
 							EditorGUIUtility.PingObject(provider.gameObject);
 						}
@@ -180,7 +179,7 @@ namespace Fusion.KCC.Editor
 					{
 						GUI.backgroundColor = colliderBackgroundColor;
 
-						if (GUILayout.Button($"{collisions[i].Collider.name}\n{collisions[i].Collider.GetType().Name}") == true)
+						if (GUILayout.Button($"{collisions[i].Collider.name}\n({collisions[i].Collider.GetType().Name})") == true)
 						{
 							EditorGUIUtility.PingObject(collisions[i].Collider.gameObject);
 						}
@@ -192,14 +191,14 @@ namespace Fusion.KCC.Editor
 
 						if (processor != null)
 						{
-							if (GUILayout.Button($"{processor.gameObject.name}\n{processor.GetType().Name}") == true)
+							if (GUILayout.Button($"{processor.gameObject.name}\n({processor.GetType().Name})") == true)
 							{
 								EditorGUIUtility.PingObject(processor.gameObject);
 							}
 						}
 						else if (provider != null)
 						{
-							if (GUILayout.Button($"{provider.gameObject.name}\n{provider.GetType().Name}") == true)
+							if (GUILayout.Button($"{provider.gameObject.name}\n({provider.GetType().Name})") == true)
 							{
 								EditorGUIUtility.PingObject(provider.gameObject);
 							}
@@ -220,7 +219,7 @@ namespace Fusion.KCC.Editor
 
 				for (int i = 0; i < ignores.Count; ++i)
 				{
-					if (GUILayout.Button($"{ignores[i].Collider.name}\n{ignores[i].GetType().Name}") == true)
+					if (GUILayout.Button($"{ignores[i].Collider.name}\n({ignores[i].GetType().Name})") == true)
 					{
 						EditorGUIUtility.PingObject(ignores[i].Collider.gameObject);
 					}
@@ -229,23 +228,16 @@ namespace Fusion.KCC.Editor
 				GUI.backgroundColor = defaultBackgroundColor;
 			}
 
-			List<KCCHit> hits = data.Hits.All;
-
-			_hitsFoldout = EditorGUILayout.Foldout(_hitsFoldout, $"Collision Hits ({hits.Count})");
-			if (_hitsFoldout == true)
+			_trackedCollidersFoldout = EditorGUILayout.Foldout(_trackedCollidersFoldout, $"Tracked Colliders ({kcc.PhysicsContacts})");
+			if (_trackedCollidersFoldout == true)
 			{
 				GUI.backgroundColor = defaultBackgroundColor;
 
-				for (int i = 0; i < hits.Count; ++i)
+				foreach (Collider collider in kcc.GetTrackedColliders())
 				{
-					KCCHit hit = hits[i];
-
-					string colliderInfo = hit.CollisionType != default ? $"[{hit.CollisionType}] " : "[---] ";
-					colliderInfo += hit.Collider.GetType().Name;
-
-					if (GUILayout.Button($"{hit.Collider.name}\n{colliderInfo}") == true)
+					if (GUILayout.Button($"{collider.gameObject.name}\n({collider.GetType().Name})") == true)
 					{
-						EditorGUIUtility.PingObject(hit.Collider.gameObject);
+						EditorGUIUtility.PingObject(collider.gameObject);
 					}
 				}
 			}
@@ -277,7 +269,7 @@ namespace Fusion.KCC.Editor
 							name       = gameObject.name;
 						}
 
-						if (GUILayout.Button($"{name}\n{processor.GetType().Name}") == true)
+						if (GUILayout.Button($"{name}\n({processor.GetType().Name})") == true)
 						{
 							EditorGUIUtility.PingObject(gameObject);
 						}

@@ -12,8 +12,6 @@ namespace Fusion.KCC
 
 		public readonly List<KCCIgnore> All = new List<KCCIgnore>();
 
-		public int Count => All.Count;
-
 		// PRIVATE MEMBERS
 
 		private Stack<KCCIgnore> _pool = new Stack<KCCIgnore>();

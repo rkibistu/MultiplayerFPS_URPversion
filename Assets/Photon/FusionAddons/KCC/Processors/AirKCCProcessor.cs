@@ -203,7 +203,7 @@ namespace Fusion.KCC
 			if (data.IsGrounded == true || data.WasGrounded == true)
 				return;
 
-			if (data.DynamicVelocity.y > 0.0f && data.DeltaTime > 0.0f)
+			if (data.DynamicVelocity.y > 0.0f)
 			{
 				Vector3 currentVelocity = (data.TargetPosition - data.BasePosition) / data.DeltaTime;
 				if (currentVelocity.y.IsAlmostZero() == true)

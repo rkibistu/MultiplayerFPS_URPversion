@@ -99,17 +99,14 @@ MonoBehaviour:
       m_Bits: 1
     RenderBehavior: 1
     Features: -1
-    SuppressConvexMeshColliders: 0
     SpawnColliderOnProxy: 1
     AllowClientTeleports: 0
     TeleportThreshold: 1
-    MaxMoveSteps: 1
     CCDRadiusMultiplier: 0.75
     AntiJitterDistance: {x: 0, y: 0}
     GroundSnapDistance: 0.25
     GroundSnapSpeed: 4
     StepHeight: 0.3
-    StepDepth: 0.2
     StepSpeed: 1
     Processors:
     - {fileID: 6733955975318150615, guid: 0b1fae6ab34a6e0478cb92d6e1a62e44, type: 3}

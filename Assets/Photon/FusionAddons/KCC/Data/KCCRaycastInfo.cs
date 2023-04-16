@@ -12,53 +12,28 @@ namespace Fusion.KCC
 		public float                   Radius;
 		public LayerMask               LayerMask;
 		public QueryTriggerInteraction TriggerInteraction;
-		public KCCRaycastHit[]         AllHits;
-		public int                     AllHitCount;
-		public KCCRaycastHit[]         ColliderHits;
-		public int                     ColliderHitCount;
-		public KCCRaycastHit[]         TriggerHits;
-		public int                     TriggerHitCount;
+		public RaycastHit[]            Hits;
+		public int                     HitCount;
 
 		// CONSTRUCTORS
 
 		public KCCRaycastInfo(int maxHits)
 		{
-			AllHits      = new KCCRaycastHit[maxHits];
-			TriggerHits  = new KCCRaycastHit[maxHits];
-			ColliderHits = new KCCRaycastHit[maxHits];
-
-			for (int i = 0; i < maxHits; ++i)
-			{
-				AllHits[i] = new KCCRaycastHit();
-			}
+			Hits = new RaycastHit[maxHits];
 		}
 
 		// PUBLIC METHODS
 
-		public void AddHit(RaycastHit raycastHit)
+		public void AddHit(RaycastHit hit)
 		{
-			if (AllHitCount == AllHits.Length)
+			if (HitCount == Hits.Length)
 				return;
 
-			KCCRaycastHit hit = AllHits[AllHitCount];
-			if (hit.Set(raycastHit) == true)
-			{
-				++AllHitCount;
-
-				if (hit.IsTrigger == true)
-				{
-					TriggerHits[TriggerHitCount] = hit;
-					++TriggerHitCount;
-				}
-				else
-				{
-					ColliderHits[ColliderHitCount] = hit;
-					++ColliderHitCount;
-				}
-			}
+			Hits[HitCount] = hit;
+			++HitCount;
 		}
 
-		public void Reset(bool deep)
+		public void Reset(bool clearArrays)
 		{
 			Origin             = default;
 			Direction          = default;
@@ -66,16 +41,11 @@ namespace Fusion.KCC
 			Radius             = default;
 			LayerMask          = default;
 			TriggerInteraction = QueryTriggerInteraction.Collide;
-			AllHitCount        = default;
-			ColliderHitCount   = default;
-			TriggerHitCount    = default;
+			HitCount           = default;
 
-			if (deep == true)
+			if (clearArrays == true)
 			{
-				for (int i = 0, count = AllHits.Length; i < count; ++i)
-				{
-					AllHits[i].Reset();
-				}
+				Hits.Clear();
 			}
 		}
 	}

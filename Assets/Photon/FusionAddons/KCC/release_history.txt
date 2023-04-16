@@ -1,36 +1,6 @@
 Photon Fusion KCC Addon - Release History
 
-Last tested with Fusion SDK 1.1.6 F Build 696
-
-Version 1.1.10
-- Compatibility with Fusion SDK 1.1.6 F Build 696
-
-Version 1.1.9
-- Added support for move sub-stepping.
-- KCCData.DeltaTime can now be changed from SetInputProperties stage.
-- Fixed metadata of collision hits on depenetration (collision type was not set under certain conditions, leading to problems with stepping up).
-- Improved step up detection on mesh colliders (fixing single ground/wall mesh reported as ground only).
-- Step up now ignore triggers, fixed direction for very small corrections.
-- KCCRaycastInfo now has structure similar to KCCOverlapInfo for easier iteration over collider types.
-- Added configurable Step Depth to KCC Settings.
-
-Version 1.1.8
-- Fixed ground snapping while moving very fast with multiple CCD steps.
-- Added KCC.SetExternalDelta() to move KCC by a specific vector in next update. This can also be used from KCCProcessor.ProcessPhysicsQuery() to extend currently executed move (external delta is consumed immediately).
-- KCCData.DeltaTime == 0.0f is now valid (velocity-based movement is already consumed and external delta movement is pending).
-- Fixed AirKCCProcessor.ProcessPhysicsQuery() stage to correctly handle zero delta time.
-- Added KCCHits (available through KCCData.Hits) - a new collection with all currently active overlap hits and metadata for custom collider filtering (this collection is not networked and supports only local history).
-- Removed KCC.PhysicsContacts => replaced by more detailed KCCData.Hits.
-- Removed KCC.GetTrackedColliders() => replaced by more detailed KCCData.Hits.
-- Suppress Convex Mesh Colliders added to KCC Settings (disabled by default). Enable if you experience incorrect depenetration from MeshCollider with Convex toggle enabled.
-- Added metadata about collider penetration (Ground / Slope / Wall / Hang / Top / Trigger - check ECollisionType for more details), available via KCCHit.
-- Fixed drawing KCC debug gizmos.
-- Updated DepenetrationChecker.
-
-Version 1.1.7
-- Added Dynamic Word Count to KCC inspector.
-- Added support for custom interpolation alpha in KCC.Interpolate() call.
-- Continuous Collision Detection (CCD) is now optional KCC Feature (EKCCFeature.CCD) and can be enabled/disabled from processors on demand.
+Last tested with Fusion SDK 1.1.2 Build 545
 
 Version 1.1.6
 - Compatibility with Fusion SDK 1.1.2 Build 545

@@ -25,22 +25,6 @@ namespace Fusion.KCC
 
 		public readonly List<IKCCProcessor> ProcessorsStack = new List<IKCCProcessor>();
 
-		public static readonly Color FixedPathColor            = Color.red;
-		public static readonly Color RenderPathColor           = Color.green;
-		public static readonly Color FixedToRenderPathColor    = Color.blue;
-		public static readonly Color PredictionCorrectionColor = Color.magenta;
-		public static readonly Color PredictionErrorColor      = Color.yellow;
-		public static readonly Color IsGroundedColor           = Color.green;
-		public static readonly Color WasGroundedColor          = Color.red;
-		public static readonly Color IsSteppingUpColor         = Color.green;
-		public static readonly Color WasSteppingUpColor        = Color.red;
-		public static readonly Color GroundNormalColor         = Color.magenta;
-		public static readonly Color GroundTangentColor        = Color.yellow;
-		public static readonly Color GroundSnapingColor        = Color.cyan;
-		public static readonly Color GroundSnapTargetColor     = Color.blue;
-		public static readonly Color GroundSnapPositionColor   = Color.red;
-		public static readonly Color KinematicTangentColor     = Color.yellow;
-
 		// PRIVATE MEMBERS
 
 		public StringBuilder _stringBuilder = new StringBuilder(1024);
@@ -65,6 +49,13 @@ namespace Fusion.KCC
 
 		public void FixedUpdate(KCC kcc)
 		{
+			KCCData fixedData = kcc.FixedData;
+
+			if (ShowPath == true)
+			{
+				UnityEngine.Debug.DrawLine(fixedData.BasePosition, fixedData.TargetPosition, Color.red, DisplayTime);
+			}
+
 			Log(kcc, true);
 		}
 
@@ -75,8 +66,7 @@ namespace Fusion.KCC
 
 			if (ShowPath == true)
 			{
-				UnityEngine.Debug.DrawLine(fixedData.BasePosition, fixedData.TargetPosition, FixedPathColor, DisplayTime);
-				UnityEngine.Debug.DrawLine(renderData.BasePosition, renderData.TargetPosition, RenderPathColor, DisplayTime);
+				UnityEngine.Debug.DrawLine(renderData.BasePosition, renderData.TargetPosition, Color.green, DisplayTime);
 			}
 
 			KCCData selectedData = UseFixedData == true ? fixedData : renderData;
@@ -85,29 +75,17 @@ namespace Fusion.KCC
 			{
 				if (selectedData.IsGrounded == true && selectedData.WasGrounded == false)
 				{
-					UnityEngine.Debug.DrawLine(selectedData.TargetPosition, selectedData.TargetPosition + Vector3.up, IsGroundedColor, DisplayTime);
+					UnityEngine.Debug.DrawLine(selectedData.TargetPosition, selectedData.TargetPosition + Vector3.up, Color.green, DisplayTime);
 				}
 				else if (selectedData.IsGrounded == false && selectedData.WasGrounded == true)
 				{
-					UnityEngine.Debug.DrawLine(selectedData.TargetPosition, selectedData.TargetPosition + Vector3.up, WasGroundedColor, DisplayTime);
+					UnityEngine.Debug.DrawLine(selectedData.TargetPosition, selectedData.TargetPosition + Vector3.up, Color.red, DisplayTime);
 				}
 			}
 
-			if (ShowSteppingUp == true)
-			{
-				if (selectedData.IsSteppingUp == true && selectedData.WasSteppingUp == false)
-				{
-					UnityEngine.Debug.DrawLine(selectedData.TargetPosition, selectedData.TargetPosition + Vector3.up, IsSteppingUpColor, DisplayTime);
-				}
-				else if (selectedData.IsSteppingUp == false && selectedData.WasSteppingUp == true)
-				{
-					UnityEngine.Debug.DrawLine(selectedData.TargetPosition, selectedData.TargetPosition + Vector3.up, WasSteppingUpColor, DisplayTime);
-				}
-			}
-
-			if (ShowGroundNormal     == true) { UnityEngine.Debug.DrawLine(selectedData.TargetPosition, selectedData.TargetPosition + selectedData.GroundNormal,     GroundNormalColor,     DisplayTime); }
-			if (ShowGroundTangent    == true) { UnityEngine.Debug.DrawLine(selectedData.TargetPosition, selectedData.TargetPosition + selectedData.GroundTangent,    GroundTangentColor,    DisplayTime); }
-			if (ShowKinematicTangent == true) { UnityEngine.Debug.DrawLine(selectedData.TargetPosition, selectedData.TargetPosition + selectedData.KinematicTangent, KinematicTangentColor, DisplayTime); }
+			if (ShowGroundNormal     == true) { UnityEngine.Debug.DrawLine(selectedData.TargetPosition, selectedData.TargetPosition + selectedData.GroundNormal,     Color.magenta, DisplayTime); }
+			if (ShowGroundTangent    == true) { UnityEngine.Debug.DrawLine(selectedData.TargetPosition, selectedData.TargetPosition + selectedData.GroundTangent,    Color.yellow,  DisplayTime); }
+			if (ShowKinematicTangent == true) { UnityEngine.Debug.DrawLine(selectedData.TargetPosition, selectedData.TargetPosition + selectedData.KinematicTangent, Color.yellow,  DisplayTime); }
 
 			Log(kcc, false);
 		}
@@ -115,18 +93,6 @@ namespace Fusion.KCC
 		public void Reset()
 		{
 			ProcessorsStack.Clear();
-		}
-
-		public void DrawGroundSnapping(Vector3 targetPosition, Vector3 targetGroundedPosition, Vector3 targetSnappedPosition, bool isInFixedUpdate)
-		{
-			if (ShowGroundSnapping == false)
-				return;
-			if (UseFixedData != isInFixedUpdate)
-				return;
-
-			UnityEngine.Debug.DrawLine(targetPosition, targetPosition + Vector3.up, GroundSnapingColor, DisplayTime);
-			UnityEngine.Debug.DrawLine(targetPosition, targetGroundedPosition, GroundSnapTargetColor, DisplayTime);
-			UnityEngine.Debug.DrawLine(targetPosition, targetSnappedPosition, GroundSnapPositionColor, DisplayTime);
 		}
 
 		// PRIVATE METHODS
@@ -156,6 +122,8 @@ namespace Fusion.KCC
 				_stringBuilder.Append($" | {nameof(data.Alpha)               } {data.Alpha.ToString("F4")               }");
 				_stringBuilder.Append($" | {nameof(data.Time)                } {data.Time.ToString("F6")                }");
 				_stringBuilder.Append($" | {nameof(data.DeltaTime)           } {data.DeltaTime.ToString("F6")           }");
+
+				_stringBuilder.Append($" | {nameof(kcc.PhysicsContacts)      } {kcc.PhysicsContacts.ToString()          }");
 
 				_stringBuilder.Append($" | {nameof(data.BasePosition)        } {data.BasePosition.ToString("F4")        }");
 				_stringBuilder.Append($" | {nameof(data.DesiredPosition)     } {data.DesiredPosition.ToString("F4")     }");
@@ -193,11 +161,6 @@ namespace Fusion.KCC
 
 				_stringBuilder.Append($" | {nameof(data.RealSpeed)           } {data.RealSpeed.ToString("F4")           }");
 				_stringBuilder.Append($" | {nameof(data.RealVelocity)        } {data.RealVelocity.ToString("F4")        }");
-
-				_stringBuilder.Append($" | {nameof(data.Collisions)          } {data.Collisions.Count.ToString()        }");
-				_stringBuilder.Append($" | {nameof(data.Modifiers)           } {data.Modifiers.Count.ToString()         }");
-				_stringBuilder.Append($" | {nameof(data.Ignores)             } {data.Ignores.Count.ToString()           }");
-				_stringBuilder.Append($" | {nameof(data.Hits)                } {data.Hits.Count.ToString()              }");
 			}
 
 			if (isInFixedUpdate == true)

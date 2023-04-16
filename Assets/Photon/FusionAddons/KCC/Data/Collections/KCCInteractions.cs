@@ -61,8 +61,6 @@ namespace Fusion.KCC
 
 		public readonly List<TInteraction> All = new List<TInteraction>();
 
-		public int Count => All.Count;
-
 		// PRIVATE MEMBERS
 
 		private Stack<TInteraction> _pool = new Stack<TInteraction>();

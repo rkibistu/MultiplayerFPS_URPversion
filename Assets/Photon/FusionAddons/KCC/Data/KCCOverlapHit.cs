@@ -7,18 +7,18 @@ namespace Fusion.KCC
 	{
 		// PUBLIC MEMBERS
 
-		public EColliderType  Type;
-		public Collider       Collider;
-		public Transform      Transform;
-		public bool           IsConvex;
-		public bool           IsTrigger;
-		public bool           IsPrimitive;
-		public bool           IsConvertible;
-		public bool           IsWithinExtent;
-		public bool           HasPenetration;
-		public float          MaxPenetration;
-		public float          UpDirectionDot;
-		public ECollisionType CollisionType;
+		public EColliderType Type;
+		public Collider      Collider;
+		public Transform     Transform;
+		public bool          IsConvex;
+		public bool          IsTrigger;
+		public bool          IsPrimitive;
+		public bool          IsConvertible;
+		public bool          HasPenetration;
+		public bool          IsWithinExtent;
+		public bool          IsGround;
+		public bool          IsSlope;
+		public bool          IsWall;
 
 		// PRIVATE MEMBERS
 
@@ -31,8 +31,6 @@ namespace Fusion.KCC
 #endif
 
 		// PUBLIC METHODS
-
-		public bool IsValid() => Type != EColliderType.None;
 
 		public bool Set(Collider collider)
 		{
@@ -91,11 +89,11 @@ namespace Fusion.KCC
 			Collider       = collider;
 			Transform      = collider.transform;
 			IsTrigger      = collider.isTrigger;
-			IsWithinExtent = default;
 			HasPenetration = default;
-			MaxPenetration = default;
-			UpDirectionDot = default;
-			CollisionType  = default;
+			IsWithinExtent = default;
+			IsGround       = default;
+			IsSlope        = default;
+			IsWall         = default;
 
 			return true;
 		}
@@ -103,8 +101,8 @@ namespace Fusion.KCC
 		public void Reset()
 		{
 			Type      = EColliderType.None;
-			Collider  = default;
-			Transform = default;
+			Collider  = null;
+			Transform = null;
 		}
 
 		public void CopyFromOther(KCCOverlapHit other)
@@ -115,12 +113,11 @@ namespace Fusion.KCC
 			IsConvex       = other.IsConvex;
 			IsTrigger      = other.IsTrigger;
 			IsPrimitive    = other.IsPrimitive;
-			IsConvertible  = other.IsConvertible;
-			IsWithinExtent = other.IsWithinExtent;
 			HasPenetration = other.HasPenetration;
-			MaxPenetration = other.MaxPenetration;
-			UpDirectionDot = other.UpDirectionDot;
-			CollisionType  = other.CollisionType;
+			IsWithinExtent = other.IsWithinExtent;
+			IsGround       = other.IsGround;
+			IsSlope        = other.IsSlope;
+			IsWall         = other.IsWall;
 		}
 	}
 }

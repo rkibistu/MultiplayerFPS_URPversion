@@ -38,11 +38,11 @@ namespace Fusion.KCC
 		/// </summary>
 		public void Restore(KCC kcc, KCCData data)
 		{
-			data.JumpImpulse          -= JumpImpulse;
 			data.ExternalVelocity     -= ExternalVelocity;
 			data.ExternalAcceleration -= ExternalAcceleration;
 			data.ExternalImpulse      -= ExternalImpulse;
 			data.ExternalForce        -= ExternalForce;
+			data.JumpImpulse          -= JumpImpulse;
 
 			RestoreUserData(kcc, data);
 		}

@@ -81,7 +81,7 @@ namespace Fusion.KCC
 		public EKCCFeatures ActiveFeatures => _activeFeatures;
 
 		/// <summary>
-		/// Controls whether update methods are driven by default Unity/Fusion methods or called manually using <c>ManualFixedUpdate()</c> and <c>ManualRenderUpdate()</c>.
+		/// Controls whether update methods are driven by default Unity/Fusion methods or called manually using <c>ManualFixedUpdate()</c> and <c>ManualUpdate()</c>.
 		/// </summary>
 		public bool HasManualUpdate => _hasManualUpdate;
 
@@ -101,7 +101,7 @@ namespace Fusion.KCC
 		public bool HasAnyAuthority => _hasInputAuthority == true || _hasStateAuthority == true;
 
 		/// <summary>
-		/// <c>True</c> if the <c>KCC</c> doesn't have input or state authority (compatible with any <c>Driver</c>).
+		/// <c>True</c> if the <c>KCC</c> doesn't have input and state authority (compatible with any <c>Driver</c>).
 		/// </summary>
 		public new bool IsProxy => _hasInputAuthority == false && _hasStateAuthority == false;
 
@@ -109,6 +109,11 @@ namespace Fusion.KCC
 		/// <c>True</c> if the <c>KCC</c> is in fixed update. This can be used to skip logic in render.
 		/// </summary>
 		public bool IsInFixedUpdate => _isFixed == true || (_driver == EKCCDriver.Fusion && Runner.Stage != default) || (_driver == EKCCDriver.Unity && Time.inFixedTimeStep == true);
+
+		/// <summary>
+		/// Number of colliders (including triggers) the <c>KCC</c> is currently touching.
+		/// </summary>
+		public int PhysicsContacts => _trackOverlapInfo.AllHitCount;
 
 		/// <summary>
 		/// Render position difference on input authority compared to state authority.
@@ -523,40 +528,6 @@ namespace Fusion.KCC
 			}
 
 			_transientData.ExternalForce = default;
-		}
-
-		/// <summary>
-		/// Add position delta from external sources. Will be consumed by following update.
-		/// Changes done in render will vanish with next fixed update.
-		/// </summary>
-		public void AddExternalDelta(Vector3 delta)
-		{
-			if (HasAnyAuthority == false)
-				return;
-
-			_renderData.ExternalDelta += delta;
-
-			if (IsInFixedUpdate == true)
-			{
-				_fixedData.ExternalDelta += delta;
-			}
-		}
-
-		/// <summary>
-		/// Set position delta from external sources. Will be consumed by following update.
-		/// Changes done in render will vanish with next fixed update.
-		/// </summary>
-		public void SetExternalDelta(Vector3 delta)
-		{
-			if (HasAnyAuthority == false)
-				return;
-
-			_renderData.ExternalDelta = delta;
-
-			if (IsInFixedUpdate == true)
-			{
-				_fixedData.ExternalDelta = delta;
-			}
 		}
 
 		/// <summary>
@@ -1388,7 +1359,7 @@ namespace Fusion.KCC
 		}
 
 		/// <summary>
-		/// Controls whether update methods are driven by default Unity/Fusion methods or called manually using <c>ManualFixedUpdate()</c> and <c>ManualRenderUpdate()</c>.
+		/// Controls whether update methods are driven by default Unity/Fusion methods or called manually using <c>ManualFixedUpdate()</c> and <c>ManualUpdate()</c>.
 		/// </summary>
 		public void SetManualUpdate(bool hasManualUpdate)
 		{
@@ -1540,9 +1511,8 @@ namespace Fusion.KCC
 
 		/// <summary>
 		/// Explicit interpolation on demand. Implicit interpolation in render update is not skipped.
-		/// <param name="alpha">Custom interpolation alpha. Valid range is 0.0 - 1.0, otherwise default value from <c>GetInterpolationData()</c> is used.</param>
 		/// </summary>
-		public void Interpolate(float alpha = -1.0f)
+		public void Interpolate()
 		{
 			if (_driver == EKCCDriver.None)
 				return;
@@ -1550,11 +1520,22 @@ namespace Fusion.KCC
 			KCCData data = Data;
 
 			Profiler.BeginSample("KCC.Interpolate");
-			InterpolateNetworkData(alpha);
+			InterpolateNetworkData();
 			CacheProcessors(data);
 			ProcessStage(EKCCStage.OnInterpolate, data, _onInterpolate);
 			SynchronizeTransform(data, true, true, IsInFixedUpdate == false && IsProxy == false);
 			Profiler.EndSample();
+		}
+
+		/// <summary>
+		/// Enumerate currently tracked colliders.
+		/// </summary>
+		public IEnumerable<Collider> GetTrackedColliders()
+		{
+			for (int i = 0; i < _trackOverlapInfo.AllHitCount; ++i)
+			{
+				yield return _trackOverlapInfo.AllHits[i].Collider;
+			}
 		}
 
 		// MonoBehaviour INTERFACE
@@ -1873,11 +1854,11 @@ namespace Fusion.KCC
 			{
 				if (_renderData.Frame == _fixedData.Frame)
 				{
-					UnityEngine.Debug.DrawLine(_fixedData.TargetPosition, _renderData.TargetPosition, KCCDebug.FixedToRenderPathColor, _debug.DisplayTime);
+					UnityEngine.Debug.DrawLine(_fixedData.TargetPosition, _renderData.TargetPosition, Color.blue, _debug.DisplayTime);
 				}
 				else
 				{
-					UnityEngine.Debug.DrawLine(_lastRenderPosition, _renderData.TargetPosition, KCCDebug.PredictionCorrectionColor, _debug.DisplayTime);
+					UnityEngine.Debug.DrawLine(_lastRenderPosition, _renderData.TargetPosition, Color.magenta, _debug.DisplayTime);
 				}
 			}
 
@@ -1976,7 +1957,7 @@ namespace Fusion.KCC
 
 							if (_debug.ShowPath == true)
 							{
-								UnityEngine.Debug.DrawLine(expectedRenderPosition, _lastRenderPosition, KCCDebug.PredictionErrorColor, _debug.DisplayTime);
+								UnityEngine.Debug.DrawLine(expectedRenderPosition, _lastRenderPosition, Color.yellow, _debug.DisplayTime);
 							}
 
 							_predictionError = _lastRenderPosition - expectedRenderPosition;
@@ -2019,6 +2000,7 @@ namespace Fusion.KCC
 
 			float   baseTime            = data.Time;
 			float   baseDeltaTime       = data.DeltaTime;
+			float   pendingDeltaTime    = Mathf.Clamp01(baseDeltaTime);
 			Vector3 basePosition        = data.TargetPosition;
 			Vector3 desiredPosition     = data.TargetPosition;
 			bool    wasGrounded         = data.IsGrounded;
@@ -2031,7 +2013,6 @@ namespace Fusion.KCC
 			if (_settings.Shape == EKCCShape.None)
 			{
 				ForceRemoveAllCollisions(data);
-				ForceRemoveAllHits(data);
 				return;
 			}
 
@@ -2039,8 +2020,7 @@ namespace Fusion.KCC
 
 			SetInputProperties(data);
 
-			basePosition  = data.BasePosition;
-			baseDeltaTime = data.DeltaTime;
+			basePosition = data.BasePosition;
 
 			ProcessStage(EKCCStage.SetDynamicVelocity,    data, _setDynamicVelocity);
 			ProcessStage(EKCCStage.SetKinematicDirection, data, _setKinematicDirection);
@@ -2048,19 +2028,12 @@ namespace Fusion.KCC
 			ProcessStage(EKCCStage.SetKinematicSpeed,     data, _setKinematicSpeed);
 			ProcessStage(EKCCStage.SetKinematicVelocity,  data, _setKinematicVelocity);
 
-			ForceRemoveAllHits(data);
-
-			float   pendingDeltaTime     = Mathf.Clamp01(baseDeltaTime);
-			Vector3 pendingDeltaPosition = data.DesiredVelocity * pendingDeltaTime + data.ExternalDelta;
-
-			desiredPosition = data.BasePosition + pendingDeltaPosition;
+			desiredPosition = data.BasePosition + data.DesiredVelocity * pendingDeltaTime;
 
 			if (data.HasTeleported == false)
 			{
 				data.TargetPosition = data.BasePosition;
 			}
-
-			data.ExternalDelta = default;
 
 			bool  hasFinished           = false;
 			float radiusMultiplier      = Mathf.Clamp(_settings.CCDRadiusMultiplier, 0.25f, 0.75f);
@@ -2071,40 +2044,27 @@ namespace Fusion.KCC
 			{
 				data.BasePosition = data.TargetPosition;
 
-				float   consumeDeltaTime     = pendingDeltaTime;
-				Vector3 consumeDeltaPosition = pendingDeltaPosition;
+				float   deltaTimeDelta = pendingDeltaTime;
+				Vector3 positionDelta  = data.DesiredVelocity * pendingDeltaTime;
 
-				if (_activeFeatures.Has(EKCCFeature.CCD) == true)
+				float positionDeltaMagnitude = positionDelta.magnitude;
+				if (positionDeltaMagnitude > maxDeltaMagnitude)
 				{
-					float consumeDeltaPositionMagnitude = consumeDeltaPosition.magnitude;
-					if (consumeDeltaPositionMagnitude > maxDeltaMagnitude)
-					{
-						float deltaRatio = optimalDeltaMagnitude / consumeDeltaPositionMagnitude;
+					float deltaRatio = optimalDeltaMagnitude / positionDeltaMagnitude;
 
-						consumeDeltaTime     *= deltaRatio;
-						consumeDeltaPosition *= deltaRatio;
-					}
-					else
-					{
-						hasFinished = true;
-					}
+					positionDelta  *= deltaRatio;
+					deltaTimeDelta *= deltaRatio;
 				}
 				else
 				{
 					hasFinished = true;
 				}
 
-				pendingDeltaTime     -= consumeDeltaTime;
-				pendingDeltaPosition -= consumeDeltaPosition;
-
-				if (pendingDeltaTime <= 0.0f)
-				{
-					pendingDeltaTime = default;
-				}
+				pendingDeltaTime = Mathf.Max(0.0f, pendingDeltaTime - deltaTimeDelta);
 
 				data.Time            = baseTime - pendingDeltaTime;
-				data.DeltaTime       = consumeDeltaTime;
-				data.DesiredPosition = data.BasePosition + consumeDeltaPosition;
+				data.DeltaTime       = deltaTimeDelta;
+				data.DesiredPosition = data.BasePosition + positionDelta;
 				data.TargetPosition  = data.DesiredPosition;
 
 				ProcessPhysicsQuery(data);
@@ -2112,15 +2072,8 @@ namespace Fusion.KCC
 
 				if (data.HasTeleported == true)
 				{
-					UpdateHits(data, null);
+					UpdateTrackedColliders(data);
 					UpdateCollisions(data);
-				}
-
-				if (hasFinished == true && data.ExternalDelta.IsZero() == false)
-				{
-					pendingDeltaPosition += data.ExternalDelta;
-					data.ExternalDelta = default;
-					hasFinished = false;
 				}
 			}
 
@@ -2143,7 +2096,7 @@ namespace Fusion.KCC
 
 			if (hasTeleported == false && data.HasTeleported == true)
 			{
-				UpdateHits(data, null);
+				UpdateTrackedColliders(data);
 				UpdateCollisions(data);
 			}
 
@@ -2157,8 +2110,6 @@ namespace Fusion.KCC
 			data.HasTeleported  = default;
 			data.MaxGroundAngle = 75.0f;
 			data.MaxWallAngle   = 5.0f;
-			data.MaxHangAngle   = 30.0f;
-			data.MaxMoveSteps   = _settings.MaxMoveSteps;
 
 			ProcessStage(EKCCStage.SetInputProperties, data, _setInputProperties);
 		}
@@ -2178,18 +2129,15 @@ namespace Fusion.KCC
 			data.GroundDistance      = default;
 			data.GroundAngle         = default;
 
-			ForceRemoveAllHits(data);
+			_trackOverlapInfo.Reset(false);
 
 			if (_settings.CollisionLayerMask != 0 && _collider.IsSpawned == true)
 			{
 				OverlapCapsule(_extendedOverlapInfo, data, data.TargetPosition, _settings.Radius, _settings.Height, _settings.Radius, _settings.CollisionLayerMask, QueryTriggerInteraction.Collide);
 
-				if (_settings.SuppressConvexMeshColliders == true)
-				{
-					_extendedOverlapInfo.ToggleConvexMeshColliders(false);
-				}
+				_extendedOverlapInfo.ToggleConvexMeshColliders(false);
 
-				data.TargetPosition = DepenetrateColliders(_extendedOverlapInfo, data, data.BasePosition, data.TargetPosition, data.HasJumped == false, data.MaxMoveSteps, 3);
+				data.TargetPosition = DepenetrateColliders(_extendedOverlapInfo, data, data.BasePosition, data.TargetPosition, data.HasJumped == false, 3);
 
 				if (data.HasJumped == true)
 				{
@@ -2213,208 +2161,113 @@ namespace Fusion.KCC
 					TrySnapToGround(data);
 				}
 
-				if (_settings.SuppressConvexMeshColliders == true)
-				{
-					_extendedOverlapInfo.ToggleConvexMeshColliders(true);
-				}
+				_extendedOverlapInfo.ToggleConvexMeshColliders(true);
 
-				UpdateHits(data, _extendedOverlapInfo);
+				if (_extendedOverlapInfo.AllWithinExtent() == true)
+				{
+					_trackOverlapInfo.CopyFromOther(_extendedOverlapInfo);
+				}
+				else
+				{
+					UpdateTrackedColliders(data);
+				}
 			}
 
 			ProcessStage(EKCCStage.ProcessPhysicsQuery, data, _processPhysicsQuery);
 		}
 
-		private Vector3 DepenetrateColliders(KCCOverlapInfo overlapInfo, KCCData data, Vector3 basePosition, Vector3 targetPosition, bool probeGrounding, int maxSteps, int resolverIterations)
+		private void UpdateTrackedColliders(KCCData data)
+		{
+			OverlapCapsule(_trackOverlapInfo, data, data.TargetPosition, _settings.Radius, _settings.Height, _settings.Extent, _settings.CollisionLayerMask, QueryTriggerInteraction.Collide);
+		}
+
+		private Vector3 DepenetrateColliders(KCCOverlapInfo overlapInfo, KCCData data, Vector3 basePosition, Vector3 targetPosition, bool probeGrounding, int maxSubSteps)
 		{
 			if (overlapInfo.ColliderHitCount == 0)
 				return targetPosition;
 
 			if (overlapInfo.ColliderHitCount == 1)
-				return DepenetrateSingle(overlapInfo, data, basePosition, targetPosition, probeGrounding, maxSteps);
+				return DepenetrateSingle(overlapInfo, data, basePosition, targetPosition, probeGrounding);
 
-			return DepenetrateMultiple(overlapInfo, data, basePosition, targetPosition, probeGrounding, maxSteps, resolverIterations);
+			return DepenetrateMultiple(overlapInfo, data, basePosition, targetPosition, probeGrounding, maxSubSteps);
 		}
 
-		private Vector3 DepenetrateSingle(KCCOverlapInfo overlapInfo, KCCData data, Vector3 basePosition, Vector3 targetPosition, bool probeGrounding, int maxSteps)
+		private Vector3 DepenetrateSingle(KCCOverlapInfo overlapInfo, KCCData data, Vector3 basePosition, Vector3 targetPosition, bool probeGrounding)
 		{
-			float   minGroundDot   = Mathf.Cos(Mathf.Clamp(data.MaxGroundAngle, 0.0f, 90.0f) * Mathf.Deg2Rad);
-			float   minWallDot     = -Mathf.Cos(Mathf.Clamp(90.0f - data.MaxWallAngle, 0.0f, 90.0f) * Mathf.Deg2Rad);
-			float   minHangDot     = -Mathf.Cos(Mathf.Clamp(90.0f - data.MaxHangAngle, 0.0f, 90.0f) * Mathf.Deg2Rad);
+			bool    hasGroundDot   = default;
+			float   minGroundDot   = default;
 			Vector3 groundNormal   = Vector3.up;
 			float   groundDistance = default;
 
 			KCCOverlapHit hit = overlapInfo.ColliderHits[0];
-			hit.UpDirectionDot = float.MinValue;
 
-			if (maxSteps > 1)
+			hit.HasPenetration = Physics.ComputePenetration(_collider.Collider, targetPosition, Quaternion.identity, hit.Collider, hit.Transform.position, hit.Transform.rotation, out Vector3 direction, out float distance);
+			if (hit.HasPenetration == true)
 			{
-				float minStepDistance = 0.001f;
-				float targetDistance  = Vector3.Distance(basePosition, targetPosition);
+				hit.IsWithinExtent = true;
 
-				if (targetDistance < maxSteps * minStepDistance)
+				hasGroundDot = true;
+				minGroundDot = Mathf.Cos(Mathf.Clamp(data.MaxGroundAngle, 0.0f, 90.0f) * Mathf.Deg2Rad);
+
+				float directionUpDot = Vector3.Dot(direction, Vector3.up);
+				if (directionUpDot >= minGroundDot)
 				{
-					maxSteps = Mathf.Max(1, (int)(targetDistance / minStepDistance));
+					hit.IsGround = true;
+
+					data.IsGrounded = true;
+
+					groundNormal = direction;
 				}
-			}
-
-			if (maxSteps <= 1)
-			{
-				hit.HasPenetration = Physics.ComputePenetration(_collider.Collider, targetPosition, Quaternion.identity, hit.Collider, hit.Transform.position, hit.Transform.rotation, out Vector3 direction, out float distance);
-				if (hit.HasPenetration == true)
+				else
 				{
-					hit.IsWithinExtent = true;
-
-					if (distance > hit.MaxPenetration)
+					float maxWallDot = Mathf.Cos(Mathf.Clamp(90.0f - data.MaxWallAngle, 0.0f, 90.0f) * Mathf.Deg2Rad);
+					if (directionUpDot >= -maxWallDot)
 					{
-						hit.MaxPenetration = distance;
-					}
-
-					float directionUpDot = Vector3.Dot(direction, Vector3.up);
-					if (directionUpDot > hit.UpDirectionDot)
-					{
-						hit.UpDirectionDot = directionUpDot;
-
-						if (directionUpDot >= minGroundDot)
+						if (directionUpDot <= maxWallDot)
 						{
-							hit.CollisionType = ECollisionType.Ground;
-
-							data.IsGrounded = true;
-
-							groundNormal = direction;
-						}
-						else if (directionUpDot > -minWallDot)
-						{
-							hit.CollisionType = ECollisionType.Slope;
-						}
-						else if (directionUpDot >= minWallDot)
-						{
-							hit.CollisionType = ECollisionType.Wall;
-						}
-						else if (directionUpDot >= minHangDot)
-						{
-							hit.CollisionType = ECollisionType.Hang;
+							hit.IsWall = true;
 						}
 						else
 						{
-							hit.CollisionType = ECollisionType.Top;
+							hit.IsSlope = true;
 						}
 					}
 
-					if (directionUpDot > 0.0f && directionUpDot < minGroundDot)
+					if (directionUpDot > 0.0f && distance >= 0.000001f && data.DynamicVelocity.y <= 0.0f)
 					{
-						if (distance >= 0.000001f && data.DynamicVelocity.y <= 0.0f)
-						{
-							Vector3 positionDelta = targetPosition - basePosition;
+						Vector3 positionDelta = targetPosition - basePosition;
 
-							float movementDot = Vector3.Dot(positionDelta.OnlyXZ(), direction.OnlyXZ());
-							if (movementDot < 0.0f)
-							{
-								KCCPhysicsUtility.ProjectVerticalPenetration(ref direction, ref distance);
-							}
+						float movementDot = Vector3.Dot(positionDelta.OnlyXZ(), direction.OnlyXZ());
+						if (movementDot < 0.0f)
+						{
+							KCCPhysicsUtility.ProjectVerticalPenetration(ref direction, ref distance);
 						}
 					}
-
-					targetPosition += direction * distance;
-				}
-			}
-			else
-			{
-				Vector3 stepPositionDelta = (targetPosition - basePosition) / maxSteps;
-				Vector3 desiredPosition   = basePosition;
-				int     remainingSteps    = maxSteps;
-
-				while (remainingSteps > 0)
-				{
-					--remainingSteps;
-
-					desiredPosition += stepPositionDelta;
-
-					hit.HasPenetration = Physics.ComputePenetration(_collider.Collider, desiredPosition, Quaternion.identity, hit.Collider, hit.Transform.position, hit.Transform.rotation, out Vector3 direction, out float distance);
-					if (hit.HasPenetration == false)
-						continue;
-
-					hit.IsWithinExtent = true;
-
-					if (distance > hit.MaxPenetration)
-					{
-						hit.MaxPenetration = distance;
-					}
-
-					float directionUpDot = Vector3.Dot(direction, Vector3.up);
-					if (directionUpDot > hit.UpDirectionDot)
-					{
-						hit.UpDirectionDot = directionUpDot;
-
-						if (directionUpDot >= minGroundDot)
-						{
-							hit.CollisionType = ECollisionType.Ground;
-
-							data.IsGrounded = true;
-
-							groundNormal = direction;
-						}
-						else if (directionUpDot > -minWallDot)
-						{
-							hit.CollisionType = ECollisionType.Slope;
-						}
-						else if (directionUpDot >= minWallDot)
-						{
-							hit.CollisionType = ECollisionType.Wall;
-						}
-						else if (directionUpDot >= minHangDot)
-						{
-							hit.CollisionType = ECollisionType.Hang;
-						}
-						else
-						{
-							hit.CollisionType = ECollisionType.Top;
-						}
-					}
-
-					if (directionUpDot > 0.0f && directionUpDot < minGroundDot)
-					{
-						if (distance >= 0.000001f && data.DynamicVelocity.y <= 0.0f)
-						{
-							float movementDot = Vector3.Dot(stepPositionDelta.OnlyXZ(), direction.OnlyXZ());
-							if (movementDot < 0.0f)
-							{
-								KCCPhysicsUtility.ProjectVerticalPenetration(ref direction, ref distance);
-							}
-						}
-					}
-
-					desiredPosition += direction * distance;
 				}
 
-				targetPosition = desiredPosition;
-			}
-
-			if (hit.UpDirectionDot == float.MinValue)
-			{
-				hit.UpDirectionDot = default;
+				targetPosition += direction * distance;
 			}
 
 			if (probeGrounding == true && data.IsGrounded == false)
 			{
+				if (hasGroundDot == false)
+				{
+					minGroundDot = Mathf.Cos(Mathf.Clamp(data.MaxGroundAngle, 0.0f, 90.0f) * Mathf.Deg2Rad);
+				}
+
 				bool isGrounded = KCCPhysicsUtility.CheckGround(_collider.Collider, targetPosition, hit.Collider, hit.Transform, _settings.Radius, _settings.Height, _settings.Extent, minGroundDot, out Vector3 checkGroundNormal, out float checkGroundDistance, out bool isWithinExtent);
 				if (isGrounded == true)
 				{
-					data.IsGrounded = true;
-
 					groundNormal   = checkGroundNormal;
 					groundDistance = checkGroundDistance;
 
-					hit.IsWithinExtent = true;
-					hit.CollisionType  = ECollisionType.Ground;
+					data.IsGrounded = true;
 				}
-				else if (isWithinExtent == true)
-				{
-					hit.IsWithinExtent = true;
 
-					if (hit.CollisionType == ECollisionType.None)
-					{
-						hit.CollisionType = ECollisionType.Slope;
-					}
+				if (hit.HasPenetration == false)
+				{
+					hit.IsGround       |= isGrounded;
+					hit.IsWithinExtent |= isWithinExtent;
 				}
 			}
 
@@ -2429,11 +2282,11 @@ namespace Fusion.KCC
 			return targetPosition;
 		}
 
-		private Vector3 DepenetrateMultiple(KCCOverlapInfo overlapInfo, KCCData data, Vector3 basePosition, Vector3 targetPosition, bool probeGrounding, int maxSteps, int resolverIterations)
+		private Vector3 DepenetrateMultiple(KCCOverlapInfo overlapInfo, KCCData data, Vector3 basePosition, Vector3 targetPosition, bool probeGrounding, int maxSubSteps)
 		{
 			float   minGroundDot        = Mathf.Cos(Mathf.Clamp(data.MaxGroundAngle, 0.0f, 90.0f) * Mathf.Deg2Rad);
-			float   minWallDot          = -Mathf.Cos(Mathf.Clamp(90.0f - data.MaxWallAngle, 0.0f, 90.0f) * Mathf.Deg2Rad);
-			float   minHangDot          = -Mathf.Cos(Mathf.Clamp(90.0f - data.MaxHangAngle, 0.0f, 90.0f) * Mathf.Deg2Rad);
+			float   maxWallDot          = Mathf.Cos(Mathf.Clamp(90.0f - data.MaxWallAngle, 0.0f, 90.0f) * Mathf.Deg2Rad);
+			int     groundColliders     = default;
 			float   groundDistance      = default;
 			float   maxGroundDot        = default;
 			Vector3 maxGroundNormal     = default;
@@ -2441,52 +2294,110 @@ namespace Fusion.KCC
 			Vector3 positionDelta       = targetPosition - basePosition;
 			Vector3 positionDeltaXZ     = positionDelta.OnlyXZ();
 
+			_resolver.Reset();
+
 			for (int i = 0; i < overlapInfo.ColliderHitCount; ++i)
 			{
 				KCCOverlapHit hit = overlapInfo.ColliderHits[i];
-				hit.UpDirectionDot = float.MinValue;
+
+				hit.HasPenetration = Physics.ComputePenetration(_collider.Collider, targetPosition, Quaternion.identity, hit.Collider, hit.Transform.position, hit.Transform.rotation, out Vector3 direction, out float distance);
+				if (hit.HasPenetration == false)
+					continue;
+
+				hit.IsWithinExtent = true;
+
+				float directionUpDot = Vector3.Dot(direction, Vector3.up);
+				if (directionUpDot >= minGroundDot)
+				{
+					hit.IsGround = true;
+
+					data.IsGrounded = true;
+
+					++groundColliders;
+
+					if (directionUpDot >= maxGroundDot)
+					{
+						maxGroundDot    = directionUpDot;
+						maxGroundNormal = direction;
+					}
+
+					averageGroundNormal += direction * directionUpDot;
+				}
+				else
+				{
+					if (directionUpDot >= -maxWallDot)
+					{
+						if (directionUpDot <= maxWallDot)
+						{
+							hit.IsWall = true;
+						}
+						else
+						{
+							hit.IsSlope = true;
+						}
+					}
+
+					if (directionUpDot > 0.0f && distance >= 0.000001f && data.DynamicVelocity.y <= 0.0f)
+					{
+						float movementDot = Vector3.Dot(positionDeltaXZ, direction.OnlyXZ());
+						if (movementDot < 0.0f)
+						{
+							KCCPhysicsUtility.ProjectVerticalPenetration(ref direction, ref distance);
+						}
+					}
+				}
+
+				_resolver.AddCorrection(direction, distance);
 			}
 
-			if (maxSteps > 1)
-			{
-				float minStepDistance = 0.001f;
-				float targetDistance  = Vector3.Distance(basePosition, targetPosition);
+			int remainingSubSteps = Mathf.Max(0, maxSubSteps);
 
-				if (targetDistance < maxSteps * minStepDistance)
+			float multiplier = 1.0f - Mathf.Min(remainingSubSteps, 2) * 0.25f;
+
+			if (_resolver.Size == 2)
+			{
+				_resolver.GetCorrection(0, out Vector3 direction0);
+				_resolver.GetCorrection(1, out Vector3 direction1);
+
+				if (Vector3.Dot(direction0, direction1) >= 0.0f)
 				{
-					maxSteps = Mathf.Max(1, (int)(targetDistance / minStepDistance));
+					targetPosition += _resolver.CalculateMinMax() * multiplier;
+				}
+				else
+				{
+					targetPosition += _resolver.CalculateBinary() * multiplier;
 				}
 			}
-
-			if (maxSteps <= 1)
+			else
 			{
+				targetPosition += _resolver.CalculateGradientDescent(12, 0.0001f) * multiplier;
+			}
+
+			while (remainingSubSteps > 0)
+			{
+				--remainingSubSteps;
+
 				_resolver.Reset();
 
 				for (int i = 0; i < overlapInfo.ColliderHitCount; ++i)
 				{
 					KCCOverlapHit hit = overlapInfo.ColliderHits[i];
 
-					hit.HasPenetration = Physics.ComputePenetration(_collider.Collider, targetPosition, Quaternion.identity, hit.Collider, hit.Transform.position, hit.Transform.rotation, out Vector3 direction, out float distance);
-					if (hit.HasPenetration == false)
+					bool hasPenetration = Physics.ComputePenetration(_collider.Collider, targetPosition, Quaternion.identity, hit.Collider, hit.Transform.position, hit.Transform.rotation, out Vector3 direction, out float distance);
+					if (hasPenetration == false)
 						continue;
 
-					hit.IsWithinExtent = true;
-
-					if (distance > hit.MaxPenetration)
-					{
-						hit.MaxPenetration = distance;
-					}
-
 					float directionUpDot = Vector3.Dot(direction, Vector3.up);
-					if (directionUpDot > hit.UpDirectionDot)
-					{
-						hit.UpDirectionDot = directionUpDot;
 
+					if (hit.HasPenetration == false)
+					{
 						if (directionUpDot >= minGroundDot)
 						{
-							hit.CollisionType = ECollisionType.Ground;
+							hit.IsGround = true;
 
 							data.IsGrounded = true;
+
+							++groundColliders;
 
 							if (directionUpDot >= maxGroundDot)
 							{
@@ -2496,27 +2407,28 @@ namespace Fusion.KCC
 
 							averageGroundNormal += direction * directionUpDot;
 						}
-						else if (directionUpDot > -minWallDot)
-						{
-							hit.CollisionType = ECollisionType.Slope;
-						}
-						else if (directionUpDot >= minWallDot)
-						{
-							hit.CollisionType = ECollisionType.Wall;
-						}
-						else if (directionUpDot >= minHangDot)
-						{
-							hit.CollisionType = ECollisionType.Hang;
-						}
 						else
 						{
-							hit.CollisionType = ECollisionType.Top;
+							if (directionUpDot >= -maxWallDot)
+							{
+								if (directionUpDot <= maxWallDot)
+								{
+									hit.IsWall = true;
+								}
+								else
+								{
+									hit.IsSlope = true;
+								}
+							}
 						}
 					}
 
-					if (directionUpDot > 0.0f && directionUpDot < minGroundDot)
+					hit.HasPenetration = true;
+					hit.IsWithinExtent = true;
+
+					if (directionUpDot < minGroundDot)
 					{
-						if (distance >= 0.000001f && data.DynamicVelocity.y <= 0.0f)
+						if (directionUpDot > 0.0f && distance >= 0.000001f && data.DynamicVelocity.y <= 0.0f)
 						{
 							float movementDot = Vector3.Dot(positionDeltaXZ, direction.OnlyXZ());
 							if (movementDot < 0.0f)
@@ -2529,218 +2441,11 @@ namespace Fusion.KCC
 					_resolver.AddCorrection(direction, distance);
 				}
 
-				int remainingSubSteps = Mathf.Max(0, resolverIterations);
+				if (_resolver.Size == 0)
+					break;
 
-				float multiplier = 1.0f - Mathf.Min(remainingSubSteps, 2) * 0.25f;
-
-				if (_resolver.Size == 2)
+				if (remainingSubSteps == 0)
 				{
-					_resolver.GetCorrection(0, out Vector3 direction0);
-					_resolver.GetCorrection(1, out Vector3 direction1);
-
-					if (Vector3.Dot(direction0, direction1) >= 0.0f)
-					{
-						targetPosition += _resolver.CalculateMinMax() * multiplier;
-					}
-					else
-					{
-						targetPosition += _resolver.CalculateBinary() * multiplier;
-					}
-				}
-				else
-				{
-					targetPosition += _resolver.CalculateGradientDescent(12, 0.0001f) * multiplier;
-				}
-
-				while (remainingSubSteps > 0)
-				{
-					--remainingSubSteps;
-
-					_resolver.Reset();
-
-					for (int i = 0; i < overlapInfo.ColliderHitCount; ++i)
-					{
-						KCCOverlapHit hit = overlapInfo.ColliderHits[i];
-
-						bool hasPenetration = Physics.ComputePenetration(_collider.Collider, targetPosition, Quaternion.identity, hit.Collider, hit.Transform.position, hit.Transform.rotation, out Vector3 direction, out float distance);
-						if (hasPenetration == false)
-							continue;
-
-						hit.IsWithinExtent = true;
-						hit.HasPenetration = true;
-
-						if (distance > hit.MaxPenetration)
-						{
-							hit.MaxPenetration = distance;
-						}
-
-						float directionUpDot = Vector3.Dot(direction, Vector3.up);
-						if (directionUpDot > hit.UpDirectionDot)
-						{
-							hit.UpDirectionDot = directionUpDot;
-
-							if (directionUpDot >= minGroundDot)
-							{
-								hit.CollisionType = ECollisionType.Ground;
-
-								data.IsGrounded = true;
-
-								if (directionUpDot >= maxGroundDot)
-								{
-									maxGroundDot    = directionUpDot;
-									maxGroundNormal = direction;
-								}
-
-								averageGroundNormal += direction * directionUpDot;
-							}
-							else if (directionUpDot > -minWallDot)
-							{
-								hit.CollisionType = ECollisionType.Slope;
-							}
-							else if (directionUpDot >= minWallDot)
-							{
-								hit.CollisionType = ECollisionType.Wall;
-							}
-							else if (directionUpDot >= minHangDot)
-							{
-								hit.CollisionType = ECollisionType.Hang;
-							}
-							else
-							{
-								hit.CollisionType = ECollisionType.Top;
-							}
-						}
-
-						if (directionUpDot > 0.0f && directionUpDot < minGroundDot)
-						{
-							if (distance >= 0.000001f && data.DynamicVelocity.y <= 0.0f)
-							{
-								float movementDot = Vector3.Dot(positionDeltaXZ, direction.OnlyXZ());
-								if (movementDot < 0.0f)
-								{
-									KCCPhysicsUtility.ProjectVerticalPenetration(ref direction, ref distance);
-								}
-							}
-						}
-
-						_resolver.AddCorrection(direction, distance);
-					}
-
-					if (_resolver.Size == 0)
-						break;
-
-					if (remainingSubSteps == 0)
-					{
-						if (_resolver.Size == 2)
-						{
-							_resolver.GetCorrection(0, out Vector3 direction0);
-							_resolver.GetCorrection(1, out Vector3 direction1);
-
-							if (Vector3.Dot(direction0, direction1) >= 0.0f)
-							{
-								targetPosition += _resolver.CalculateGradientDescent(12, 0.0001f);
-							}
-							else
-							{
-								targetPosition += _resolver.CalculateBinary();
-							}
-						}
-						else
-						{
-							targetPosition += _resolver.CalculateGradientDescent(12, 0.0001f);
-						}
-					}
-					else if (remainingSubSteps == 1)
-					{
-						targetPosition += _resolver.CalculateMinMax() * 0.75f;
-					}
-					else
-					{
-						targetPosition += _resolver.CalculateMinMax() * 0.5f;
-					}
-				}
-			}
-			else
-			{
-				Vector3 stepPositionDelta = (targetPosition - basePosition) / maxSteps;
-				Vector3 desiredPosition   = basePosition;
-				int     remainingSteps    = maxSteps;
-
-				while (remainingSteps > 1)
-				{
-					--remainingSteps;
-
-					desiredPosition += stepPositionDelta;
-
-					_resolver.Reset();
-
-					for (int i = 0; i < overlapInfo.ColliderHitCount; ++i)
-					{
-						KCCOverlapHit hit = overlapInfo.ColliderHits[i];
-
-						hit.HasPenetration = Physics.ComputePenetration(_collider.Collider, desiredPosition, Quaternion.identity, hit.Collider, hit.Transform.position, hit.Transform.rotation, out Vector3 direction, out float distance);
-						if (hit.HasPenetration == false)
-							continue;
-
-						hit.IsWithinExtent = true;
-
-						if (distance > hit.MaxPenetration)
-						{
-							hit.MaxPenetration = distance;
-						}
-
-						float directionUpDot = Vector3.Dot(direction, Vector3.up);
-						if (directionUpDot > hit.UpDirectionDot)
-						{
-							hit.UpDirectionDot = directionUpDot;
-
-							if (directionUpDot >= minGroundDot)
-							{
-								hit.CollisionType = ECollisionType.Ground;
-
-								data.IsGrounded = true;
-
-								if (directionUpDot >= maxGroundDot)
-								{
-									maxGroundDot    = directionUpDot;
-									maxGroundNormal = direction;
-								}
-
-								averageGroundNormal += direction * directionUpDot;
-							}
-							else if (directionUpDot > -minWallDot)
-							{
-								hit.CollisionType = ECollisionType.Slope;
-							}
-							else if (directionUpDot >= minWallDot)
-							{
-								hit.CollisionType = ECollisionType.Wall;
-							}
-							else if (directionUpDot >= minHangDot)
-							{
-								hit.CollisionType = ECollisionType.Hang;
-							}
-							else
-							{
-								hit.CollisionType = ECollisionType.Top;
-							}
-						}
-
-						if (directionUpDot > 0.0f && directionUpDot < minGroundDot)
-						{
-							if (distance >= 0.000001f && data.DynamicVelocity.y <= 0.0f)
-							{
-								float movementDot = Vector3.Dot(stepPositionDelta.OnlyXZ(), direction.OnlyXZ());
-								if (movementDot < 0.0f)
-								{
-									KCCPhysicsUtility.ProjectVerticalPenetration(ref direction, ref distance);
-								}
-							}
-						}
-
-						_resolver.AddCorrection(direction, distance);
-					}
-
 					if (_resolver.Size == 2)
 					{
 						_resolver.GetCorrection(0, out Vector3 direction0);
@@ -2748,120 +2453,25 @@ namespace Fusion.KCC
 
 						if (Vector3.Dot(direction0, direction1) >= 0.0f)
 						{
-							desiredPosition += _resolver.CalculateMinMax();
+							targetPosition += _resolver.CalculateGradientDescent(12, 0.0001f);
 						}
 						else
 						{
-							desiredPosition += _resolver.CalculateBinary();
+							targetPosition += _resolver.CalculateBinary();
 						}
 					}
 					else
 					{
-						desiredPosition += _resolver.CalculateMinMax();
+						targetPosition += _resolver.CalculateGradientDescent(12, 0.0001f);
 					}
 				}
-
-				--remainingSteps;
-
-				desiredPosition += stepPositionDelta;
-
-				_resolver.Reset();
-
-				for (int i = 0; i < overlapInfo.ColliderHitCount; ++i)
+				else if (remainingSubSteps == 1)
 				{
-					KCCOverlapHit hit = overlapInfo.ColliderHits[i];
-
-					hit.HasPenetration = Physics.ComputePenetration(_collider.Collider, desiredPosition, Quaternion.identity, hit.Collider, hit.Transform.position, hit.Transform.rotation, out Vector3 direction, out float distance);
-					if (hit.HasPenetration == false)
-						continue;
-
-					hit.IsWithinExtent = true;
-
-					if (distance > hit.MaxPenetration)
-					{
-						hit.MaxPenetration = distance;
-					}
-
-					float directionUpDot = Vector3.Dot(direction, Vector3.up);
-					if (directionUpDot > hit.UpDirectionDot)
-					{
-						hit.UpDirectionDot = directionUpDot;
-
-						if (directionUpDot >= minGroundDot)
-						{
-							hit.CollisionType = ECollisionType.Ground;
-
-							data.IsGrounded = true;
-
-							if (directionUpDot >= maxGroundDot)
-							{
-								maxGroundDot    = directionUpDot;
-								maxGroundNormal = direction;
-							}
-
-							averageGroundNormal += direction * directionUpDot;
-						}
-						else if (directionUpDot > -minWallDot)
-						{
-							hit.CollisionType = ECollisionType.Slope;
-						}
-						else if (directionUpDot >= minWallDot)
-						{
-							hit.CollisionType = ECollisionType.Wall;
-						}
-						else if (directionUpDot >= minHangDot)
-						{
-							hit.CollisionType = ECollisionType.Hang;
-						}
-						else
-						{
-							hit.CollisionType = ECollisionType.Top;
-						}
-					}
-
-					if (directionUpDot > 0.0f && directionUpDot < minGroundDot)
-					{
-						if (distance >= 0.000001f && data.DynamicVelocity.y <= 0.0f)
-						{
-							float movementDot = Vector3.Dot(stepPositionDelta.OnlyXZ(), direction.OnlyXZ());
-							if (movementDot < 0.0f)
-							{
-								KCCPhysicsUtility.ProjectVerticalPenetration(ref direction, ref distance);
-							}
-						}
-					}
-
-					_resolver.AddCorrection(direction, distance);
-				}
-
-				if (_resolver.Size == 2)
-				{
-					_resolver.GetCorrection(0, out Vector3 direction0);
-					_resolver.GetCorrection(1, out Vector3 direction1);
-
-					if (Vector3.Dot(direction0, direction1) >= 0.0f)
-					{
-						desiredPosition += _resolver.CalculateMinMax();
-					}
-					else
-					{
-						desiredPosition += _resolver.CalculateBinary();
-					}
+					targetPosition += _resolver.CalculateMinMax() * 0.75f;
 				}
 				else
 				{
-					desiredPosition += _resolver.CalculateGradientDescent(12, 0.0001f);
-				}
-
-				targetPosition = desiredPosition;
-			}
-
-			for (int i = 0; i < overlapInfo.ColliderHitCount; ++i)
-			{
-				KCCOverlapHit hit = overlapInfo.ColliderHits[i];
-				if (hit.UpDirectionDot == float.MinValue)
-				{
-					hit.UpDirectionDot = default;
+					targetPosition += _resolver.CalculateMinMax() * 0.5f;
 				}
 			}
 
@@ -2884,19 +2494,10 @@ namespace Fusion.KCC
 							closestGroundNormal   = checkGroundNormal;
 							closestGroundDistance = checkGroundDistance;
 						}
-
-						hit.IsWithinExtent = true;
-						hit.CollisionType  = ECollisionType.Ground;
 					}
-					else if (isWithinExtent == true)
-					{
-						hit.IsWithinExtent = true;
 
-						if (hit.CollisionType == ECollisionType.None)
-						{
-							hit.CollisionType = ECollisionType.Slope;
-						}
-					}
+					hit.IsGround       |= isGrounded;
+					hit.IsWithinExtent |= isWithinExtent;
 				}
 
 				if (data.IsGrounded == true)
@@ -2904,12 +2505,17 @@ namespace Fusion.KCC
 					maxGroundNormal     = closestGroundNormal;
 					averageGroundNormal = closestGroundNormal;
 					groundDistance      = closestGroundDistance;
+					groundColliders     = 1;
 				}
 			}
 
 			if (data.IsGrounded == true)
 			{
-				if (averageGroundNormal.IsEqual(maxGroundNormal) == false)
+				if (groundColliders <= 1)
+				{
+					averageGroundNormal = maxGroundNormal;
+				}
+				else
 				{
 					averageGroundNormal.Normalize();
 				}
@@ -2929,16 +2535,8 @@ namespace Fusion.KCC
 			{
 				KCCOverlapHit hit = overlapInfo.TriggerHits[i];
 
-				bool hasPenetration = Physics.ComputePenetration(_collider.Collider, data.TargetPosition, Quaternion.identity, hit.Collider, hit.Transform.position, hit.Transform.rotation, out Vector3 direction, out float distance);
-
-				hit.HasPenetration = hasPenetration;
-				hit.IsWithinExtent = hasPenetration;
-				hit.CollisionType  = hasPenetration == true ? ECollisionType.Trigger : ECollisionType.None;
-
-				if (distance > hit.MaxPenetration)
-				{
-					hit.MaxPenetration = distance;
-				}
+				hit.HasPenetration = Physics.ComputePenetration(_collider.Collider, data.TargetPosition, Quaternion.identity, hit.Collider, hit.Transform.position, hit.Transform.rotation, out Vector3 direction, out float distance);
+				hit.IsWithinExtent = hit.HasPenetration;
 			}
 		}
 
@@ -2949,29 +2547,27 @@ namespace Fusion.KCC
 			if (_settings.StepHeight <= 0.0f)
 				return;
 
-			data.IsSteppingUp = false;
-
-			if (data.WasSteppingUp == false && (data.IsGrounded == false || data.GroundDistance > 0.001f))
-				return;
-
-			if (IsTouchingSlopeOrWallOrHang(overlapInfo) == true)
+			if (data.WasSteppingUp == true)
 			{
+				if (IsTouchingSlopeOrWall(overlapInfo) == false)
+				{
+					data.IsSteppingUp = false;
+					return;
+				}
+
 				data.IsSteppingUp = true;
 			}
-			else if (IsTouchingGroundMesh(overlapInfo) == true)
+			else
 			{
-				Vector3 desiredDelta    = data.DesiredPosition - data.BasePosition;
-				float   desiredDistance = desiredDelta.magnitude;
-
-				if (desiredDistance > 0.001f)
+				if (data.IsGrounded == false || data.GroundDistance > 0.001f)
 				{
-					Vector3 targetDelta    = data.TargetPosition - data.BasePosition;
-					float   targetDistance = targetDelta.magnitude;
+					data.IsSteppingUp = false;
+					return;
+				}
 
-					if (targetDistance / desiredDistance < 0.1f)
-					{
-						data.IsSteppingUp = true;
-					}
+				if (IsTouchingSlopeOrWall(overlapInfo) == true)
+				{
+					data.IsSteppingUp = true;
 				}
 			}
 
@@ -2996,9 +2592,7 @@ namespace Fusion.KCC
 					return;
 				}
 
-				Vector3 correctionDelta     = targetPosition - desiredPosition;
-				float   correctionDistance  = correctionDelta.magnitude;
-				Vector3 correctionDirection = correctionDistance > 0.001f ? correctionDelta / correctionDistance : -desiredDirection;
+				Vector3 correctionDirection = Vector3.Normalize(targetPosition - desiredPosition);
 
 				if (Vector3.Dot(desiredDirection, correctionDirection) >= 0.0f)
 				{
@@ -3017,16 +2611,12 @@ namespace Fusion.KCC
 					}
 				}
 
-				float   checkRadius   = _settings.Radius - _settings.Extent;
 				Vector3 checkPosition = targetPosition + new Vector3(0.0f, _settings.StepHeight, 0.0f);
 
-				if (OverlapCapsule(_sharedOverlapInfo, data, checkPosition, checkRadius, _settings.Height, 0.0f, _settings.CollisionLayerMask, QueryTriggerInteraction.Ignore) == true)
+				if (OverlapCapsule(_sharedOverlapInfo, data, checkPosition, _settings.Radius, _settings.Height, 0.0f, _settings.CollisionLayerMask, QueryTriggerInteraction.Ignore) == true)
 				{
-					if (_sharedOverlapInfo.ColliderHitCount > 0)
-					{
-						data.IsSteppingUp = false;
-						return;
-					}
+					data.IsSteppingUp = false;
+					return;
 				}
 
 				Vector3 desiredCheckDirectionXZ    = Vector3.Normalize(desiredDirection.OnlyXZ());
@@ -3040,36 +2630,31 @@ namespace Fusion.KCC
 
 				Vector3 combinedCheckDirectionXZ = Vector3.Normalize(desiredCheckDirectionXZ + correctionCheckDirectionXZ);
 
-				checkPosition += combinedCheckDirectionXZ * _settings.StepDepth;
+				checkPosition += combinedCheckDirectionXZ * _settings.Radius;
 
-				if (OverlapCapsule(_sharedOverlapInfo, data, checkPosition, checkRadius, _settings.Height, 0.0f, _settings.CollisionLayerMask, QueryTriggerInteraction.Ignore) == true)
+				if (OverlapCapsule(_sharedOverlapInfo, data, checkPosition, _settings.Radius, _settings.Height, 0.0f, _settings.CollisionLayerMask, QueryTriggerInteraction.Ignore) == true)
 				{
-					if (_sharedOverlapInfo.ColliderHitCount > 0)
-					{
-						data.IsSteppingUp = false;
-						return;
-					}
+					data.IsSteppingUp = false;
+					return;
 				}
 
+				float checkRadius   = _settings.Radius - _settings.Extent;
 				float maxStepHeight = _settings.StepHeight;
 
 				if (SphereCast(_raycastInfo, data, checkPosition + new Vector3(0.0f, checkRadius, 0.0f), Vector3.down, maxStepHeight, checkRadius, _settings.CollisionLayerMask, QueryTriggerInteraction.Ignore) == true)
 				{
-					if (_raycastInfo.ColliderHitCount > 0)
+					Vector3 highestPoint = new Vector3(0.0f, float.MinValue, 0.0f);
+
+					for (int i = 0, count = _raycastInfo.HitCount; i < count; ++i)
 					{
-						Vector3 highestPoint = new Vector3(0.0f, float.MinValue, 0.0f);
-
-						for (int i = 0, count = _raycastInfo.ColliderHitCount; i < count; ++i)
+						RaycastHit raycastHit = _raycastInfo.Hits[i];
+						if (raycastHit.point.y > highestPoint.y)
 						{
-							RaycastHit raycastHit = _raycastInfo.ColliderHits[i].RaycastHit;
-							if (raycastHit.point.y > highestPoint.y)
-							{
-								highestPoint = raycastHit.point;
-							}
+							highestPoint = raycastHit.point;
 						}
-
-						maxStepHeight = Mathf.Clamp(maxStepHeight - (checkPosition.y - highestPoint.y) - _settings.Extent, 0.0f, _settings.StepHeight);
 					}
+
+					maxStepHeight = Mathf.Clamp(maxStepHeight - (checkPosition.y - highestPoint.y) - _settings.Extent, 0.0f, _settings.StepHeight);
 				}
 
 				float desiredDistance   = Vector3.Distance(basePosition, desiredPosition);
@@ -3087,24 +2672,13 @@ namespace Fusion.KCC
 				data.GroundTangent  = data.TransformDirection;
 			}
 
-			static bool IsTouchingSlopeOrWallOrHang(KCCOverlapInfo overlapInfo)
+			static bool IsTouchingSlopeOrWall(KCCOverlapInfo overlapInfo)
 			{
 				for (int i = 0; i < overlapInfo.ColliderHitCount; ++i)
 				{
 					KCCOverlapHit hit = overlapInfo.ColliderHits[i];
-					if (hit.IsWithinExtent == true && (hit.CollisionType == ECollisionType.Slope || hit.CollisionType == ECollisionType.Wall || hit.CollisionType == ECollisionType.Hang))
-						return true;
-				}
 
-				return false;
-			}
-
-			static bool IsTouchingGroundMesh(KCCOverlapInfo overlapInfo)
-			{
-				for (int i = 0; i < overlapInfo.ColliderHitCount; ++i)
-				{
-					KCCOverlapHit hit = overlapInfo.ColliderHits[i];
-					if (hit.IsWithinExtent == true && hit.CollisionType == ECollisionType.Ground && (hit.Type == EColliderType.Mesh || hit.Type == EColliderType.Terrain))
+					if (hit.IsWithinExtent == true && (hit.IsSlope == true || hit.IsWall == true))
 						return true;
 				}
 
@@ -3131,21 +2705,18 @@ namespace Fusion.KCC
 			if (_sharedOverlapInfo.ColliderHitCount == 0)
 				return;
 
-			if (_settings.SuppressConvexMeshColliders == true)
-			{
-				_sharedOverlapInfo.ToggleConvexMeshColliders(false);
-			}
+			_sharedOverlapInfo.ToggleConvexMeshColliders(false);
 
 			Vector3 targetGroundedPosition   = data.TargetPosition;
 			Vector3 penetrationPositionDelta = new Vector3(0.0f, -penetrationDelta, 0.0f);
 
 			for (int i = 0; i < penetrationSteps; ++i)
 			{
-				targetGroundedPosition = DepenetrateColliders(_sharedOverlapInfo, data, targetGroundedPosition, targetGroundedPosition + penetrationPositionDelta, false, 0, 0);
+				targetGroundedPosition = DepenetrateColliders(_sharedOverlapInfo, data, targetGroundedPosition, targetGroundedPosition + penetrationPositionDelta, false, 0);
 
 				if (data.IsGrounded == true)
 				{
-					float   maxSnapDelta   = _settings.GroundSnapSpeed * data.UnscaledDeltaTime;
+					float   maxSnapDelta   = _settings.GroundSnapSpeed * data.DeltaTime;
 					Vector3 positionOffset = targetGroundedPosition - data.TargetPosition;
 					Vector3 targetSnappedPosition;
 
@@ -3163,7 +2734,12 @@ namespace Fusion.KCC
 						targetSnappedPosition = data.TargetPosition + positionOffset.normalized * maxSnapDelta;
 					}
 
-					_debug.DrawGroundSnapping(data.TargetPosition, targetGroundedPosition, targetSnappedPosition, IsInFixedUpdate);
+					if (_debug.ShowGroundSnapping == true && _debug.UseFixedData == IsInFixedUpdate)
+					{
+						UnityEngine.Debug.DrawLine(data.TargetPosition, data.TargetPosition + Vector3.up, Color.cyan, _debug.DisplayTime);
+						UnityEngine.Debug.DrawLine(data.TargetPosition, targetGroundedPosition, Color.blue, _debug.DisplayTime);
+						UnityEngine.Debug.DrawLine(data.TargetPosition, targetSnappedPosition, Color.red, _debug.DisplayTime);
+					}
 
 					data.TargetPosition     = targetSnappedPosition;
 					data.GroundDistance     = Mathf.Max(0.0f, targetSnappedPosition.y - targetGroundedPosition.y);
@@ -3175,10 +2751,7 @@ namespace Fusion.KCC
 				}
 			}
 
-			if (_settings.SuppressConvexMeshColliders == true)
-			{
-				_sharedOverlapInfo.ToggleConvexMeshColliders(true);
-			}
+			_sharedOverlapInfo.ToggleConvexMeshColliders(true);
 		}
 
 		private static void CalculateGroundProperties(KCCData data)
@@ -3257,7 +2830,7 @@ namespace Fusion.KCC
 
 			++_statistics.RaycastQueries;
 
-			return raycastInfo.AllHitCount > 0;
+			return raycastInfo.HitCount > 0;
 		}
 
 		private bool SphereCast(KCCRaycastInfo raycastInfo, KCCData data, Vector3 origin, Vector3 direction, float maxDistance, float radius, LayerMask layerMask, QueryTriggerInteraction triggerInteraction)
@@ -3287,49 +2860,7 @@ namespace Fusion.KCC
 
 			++_statistics.ShapecastQueries;
 
-			return raycastInfo.AllHitCount > 0;
-		}
-
-		private void UpdateHits(KCCData data, KCCOverlapInfo extendedOverlapInfo)
-		{
-			if (extendedOverlapInfo != null && extendedOverlapInfo.AllWithinExtent() == true)
-			{
-				_trackOverlapInfo.CopyFromOther(extendedOverlapInfo);
-			}
-			else
-			{
-				OverlapCapsule(_trackOverlapInfo, data, data.TargetPosition, _settings.Radius, _settings.Height, _settings.Extent, _settings.CollisionLayerMask, QueryTriggerInteraction.Collide);
-
-				if (extendedOverlapInfo != null)
-				{
-					for (int i = 0; i < _trackOverlapInfo.AllHitCount; ++i)
-					{
-						KCCOverlapHit trackedHit = _trackOverlapInfo.AllHits[i];
-
-						for (int j = 0; j < extendedOverlapInfo.AllHitCount; ++j)
-						{
-							KCCOverlapHit extendedHit = extendedOverlapInfo.AllHits[j];
-							if (object.ReferenceEquals(trackedHit.Collider, extendedHit.Collider) == true)
-							{
-								trackedHit.CopyFromOther(extendedHit);
-							}
-						}
-					}
-				}
-			}
-
-			data.Hits.Clear(false);
-
-			for (int i = 0, count = _trackOverlapInfo.AllHitCount; i < count; ++i)
-			{
-				data.Hits.Add(_trackOverlapInfo.AllHits[i]);
-			}
-		}
-
-		private void ForceRemoveAllHits(KCCData data)
-		{
-			_trackOverlapInfo.Reset(false);
-			data.Hits.Clear(false);
+			return raycastInfo.HitCount > 0;
 		}
 
 		private void UpdateCollisions(KCCData data)

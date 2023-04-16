@@ -118,7 +118,7 @@ namespace Fusion.KCC
 				float directionUpDot = Vector3.Dot(direction, Vector3.up);
 				if (directionUpDot >= minGroundDot)
 				{
-					hit.CollisionType = ECollisionType.Ground;
+					hit.IsGround = true;
 
 					data.IsGrounded = true;
 
@@ -128,27 +128,16 @@ namespace Fusion.KCC
 				{
 					probeGrounding = false;
 
-					float minWallDot = -Mathf.Cos(Mathf.Clamp(90.0f - data.MaxWallAngle, 0.0f, 90.0f) * Mathf.Deg2Rad);
-
-					if (directionUpDot > -minWallDot)
+					float maxWallDot = Mathf.Cos(Mathf.Clamp(90.0f - data.MaxWallAngle, 0.0f, 90.0f) * Mathf.Deg2Rad);
+					if (directionUpDot >= -maxWallDot)
 					{
-						hit.CollisionType = ECollisionType.Slope;
-					}
-					else if (directionUpDot >= minWallDot)
-					{
-						hit.CollisionType = ECollisionType.Wall;
-					}
-					else
-					{
-						float minHangDot = -Mathf.Cos(Mathf.Clamp(90.0f - data.MaxHangAngle, 0.0f, 90.0f) * Mathf.Deg2Rad);
-
-						if (directionUpDot >= minHangDot)
+						if (directionUpDot <= maxWallDot)
 						{
-							hit.CollisionType = ECollisionType.Hang;
+							hit.IsWall = true;
 						}
 						else
 						{
-							hit.CollisionType = ECollisionType.Top;
+							hit.IsSlope = true;
 						}
 					}
 
@@ -181,10 +170,9 @@ namespace Fusion.KCC
 					groundDistance = checkGroundDistance;
 
 					data.IsGrounded = true;
-
-					hit.CollisionType = ECollisionType.Ground;
 				}
 
+				hit.IsGround       |= isGrounded;
 				hit.IsWithinExtent |= isWithinExtent;
 			}
 
@@ -202,8 +190,7 @@ namespace Fusion.KCC
 		private Vector3 DepenetrateMultiple(KCCOverlapInfo overlapInfo, KCCData data, Vector3 basePosition, Vector3 targetPosition, bool probeGrounding, int maxSubSteps)
 		{
 			float   minGroundDot        = Mathf.Cos(Mathf.Clamp(data.MaxGroundAngle, 0.0f, 90.0f) * Mathf.Deg2Rad);
-			float   minWallDot          = -Mathf.Cos(Mathf.Clamp(90.0f - data.MaxWallAngle, 0.0f, 90.0f) * Mathf.Deg2Rad);
-			float   minHangDot          = -Mathf.Cos(Mathf.Clamp(90.0f - data.MaxHangAngle, 0.0f, 90.0f) * Mathf.Deg2Rad);
+			float   maxWallDot          = Mathf.Cos(Mathf.Clamp(90.0f - data.MaxWallAngle, 0.0f, 90.0f) * Mathf.Deg2Rad);
 			int     groundColliders     = default;
 			float   groundDistance      = default;
 			float   maxGroundDot        = default;
@@ -230,7 +217,7 @@ namespace Fusion.KCC
 				float directionUpDot = Vector3.Dot(direction, Vector3.up);
 				if (directionUpDot >= minGroundDot)
 				{
-					hit.CollisionType = ECollisionType.Ground;
+					hit.IsGround = true;
 
 					data.IsGrounded = true;
 
@@ -246,21 +233,16 @@ namespace Fusion.KCC
 				}
 				else
 				{
-					if (directionUpDot > -minWallDot)
+					if (directionUpDot >= -maxWallDot)
 					{
-						hit.CollisionType = ECollisionType.Slope;
-					}
-					else if (directionUpDot >= minWallDot)
-					{
-						hit.CollisionType = ECollisionType.Wall;
-					}
-					else if (directionUpDot >= minHangDot)
-					{
-						hit.CollisionType = ECollisionType.Hang;
-					}
-					else
-					{
-						hit.CollisionType = ECollisionType.Top;
+						if (directionUpDot <= maxWallDot)
+						{
+							hit.IsWall = true;
+						}
+						else
+						{
+							hit.IsSlope = true;
+						}
 					}
 
 					if (directionUpDot > 0.0f && distance >= 0.000001f && data.DynamicVelocity.y <= 0.0f)
@@ -322,7 +304,7 @@ namespace Fusion.KCC
 
 						if (directionUpDot >= minGroundDot)
 						{
-							hit.CollisionType = ECollisionType.Ground;
+							hit.IsGround = true;
 
 							data.IsGrounded = true;
 
@@ -336,21 +318,19 @@ namespace Fusion.KCC
 
 							averageGroundNormal += direction * directionUpDot;
 						}
-						else if (directionUpDot > -minWallDot)
-						{
-							hit.CollisionType = ECollisionType.Slope;
-						}
-						else if (directionUpDot >= minWallDot)
-						{
-							hit.CollisionType = ECollisionType.Wall;
-						}
-						else if (directionUpDot >= minHangDot)
-						{
-							hit.CollisionType = ECollisionType.Hang;
-						}
 						else
 						{
-							hit.CollisionType = ECollisionType.Top;
+							if (directionUpDot >= -maxWallDot)
+							{
+								if (directionUpDot <= maxWallDot)
+								{
+									hit.IsWall = true;
+								}
+								else
+								{
+									hit.IsSlope = true;
+								}
+							}
 						}
 					}
 
@@ -425,10 +405,9 @@ namespace Fusion.KCC
 							closestGroundNormal   = checkGroundNormal;
 							closestGroundDistance = checkGroundDistance;
 						}
-
-						hit.CollisionType = ECollisionType.Ground;
 					}
 
+					hit.IsGround       |= isGrounded;
 					hit.IsWithinExtent |= isWithinExtent;
 				}
 

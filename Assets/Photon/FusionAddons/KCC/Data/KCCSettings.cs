@@ -1,6 +1,7 @@
 namespace Fusion.KCC
 {
 	using System;
+	using System.Collections.Generic;
 	using UnityEngine;
 
 	/// <summary>
@@ -54,9 +55,6 @@ namespace Fusion.KCC
 
 		[Header("Local")]
 
-		[Tooltip("Enable to always check collisions against non-convex mesh collider.")]
-		public bool SuppressConvexMeshColliders = false;
-
 		[Tooltip("Used to skip collider creation on proxies.")]
 		public bool SpawnColliderOnProxy = true;
 
@@ -66,12 +64,8 @@ namespace Fusion.KCC
 		[Tooltip("Defines minimum distance the KCC must move in single tick to treat the movement as instant (teleport). Affects interpolation and other KCC features.")]
 		public float TeleportThreshold = 1.0f;
 
-		[Tooltip("Single Move/CCD step is split into multiple smaller sub-steps which results in higher overall depenetration quality.")]
-		[Range(1, 16)]
-		public int MaxMoveSteps = 1;
-
-		[Tooltip("Controls maximum distance the KCC moves in a single CCD step. Valid range is 25% - 75% of the radius. Use lower values if the character passes through geometry.\n" +
-		"This setting is valid only when EKCCFeature.CCD is enabled. CCD Max Step Distance = Radius * CCD Radius Multiplier")]
+		[Tooltip("Controls maximum distance the KCC moves in single CCD step. Valid range is 25% - 75%. Use lower values if the character passes through geometry.\n" +
+		"CCD Max Step Distance = Radius * CCD Radius Multiplier")]
 		[Range(0.25f, 0.75f)]
 		public float CCDRadiusMultiplier = 0.75f;
 
@@ -88,9 +82,6 @@ namespace Fusion.KCC
 
 		[Tooltip("Maximum obstacle height to step on it.")]
 		public float StepHeight = 0.3f;
-
-		[Tooltip("Maximum depth of the step check.")]
-		public float StepDepth = 0.2f;
 
 		[Tooltip("Multiplier of unapplied movement projected to step up. This helps traversing obstacles faster.")]
 		public float StepSpeed = 1.0f;
@@ -122,28 +113,25 @@ namespace Fusion.KCC
 
 		public void CopyFromOther(KCCSettings other)
 		{
-			Shape                       = other.Shape;
-			IsTrigger                   = other.IsTrigger;
-			Radius                      = other.Radius;
-			Height                      = other.Height;
-			Extent                      = other.Extent;
-			Mass                        = other.Mass;
-			ColliderLayer               = other.ColliderLayer;
-			CollisionLayerMask          = other.CollisionLayerMask;
-			RenderBehavior              = other.RenderBehavior;
-			Features                    = other.Features;
-			SuppressConvexMeshColliders = other.SuppressConvexMeshColliders;
-			SpawnColliderOnProxy        = other.SpawnColliderOnProxy;
-			AllowClientTeleports        = other.AllowClientTeleports;
-			TeleportThreshold           = other.TeleportThreshold;
-			MaxMoveSteps                = other.MaxMoveSteps;
-			CCDRadiusMultiplier         = other.CCDRadiusMultiplier;
-			AntiJitterDistance          = other.AntiJitterDistance;
-			GroundSnapDistance          = other.GroundSnapDistance;
-			GroundSnapSpeed             = other.GroundSnapSpeed;
-			StepHeight                  = other.StepHeight;
-			StepDepth                   = other.StepDepth;
-			StepSpeed                   = other.StepSpeed;
+			Shape                = other.Shape;
+			IsTrigger            = other.IsTrigger;
+			Radius               = other.Radius;
+			Height               = other.Height;
+			Extent               = other.Extent;
+			Mass                 = other.Mass;
+			ColliderLayer        = other.ColliderLayer;
+			CollisionLayerMask   = other.CollisionLayerMask;
+			RenderBehavior       = other.RenderBehavior;
+			Features             = other.Features;
+			SpawnColliderOnProxy = other.SpawnColliderOnProxy;
+			AllowClientTeleports = other.AllowClientTeleports;
+			TeleportThreshold    = other.TeleportThreshold;
+			CCDRadiusMultiplier  = other.CCDRadiusMultiplier;
+			AntiJitterDistance   = other.AntiJitterDistance;
+			GroundSnapDistance   = other.GroundSnapDistance;
+			GroundSnapSpeed      = other.GroundSnapSpeed;
+			StepHeight           = other.StepHeight;
+			StepSpeed            = other.StepSpeed;
 
 			if (other.Processors != null && other.Processors.Length > 0)
 			{

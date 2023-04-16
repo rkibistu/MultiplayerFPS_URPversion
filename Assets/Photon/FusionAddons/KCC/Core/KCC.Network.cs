@@ -76,17 +76,12 @@ namespace Fusion.KCC
 			}
 		}
 
-		private unsafe void InterpolateNetworkData(float alpha = -1.0f)
+		private unsafe void InterpolateNetworkData()
 		{
 			if (_driver != EKCCDriver.Fusion)
 				return;
 			if (GetInterpolationData(out InterpolationData interpolationData) == false)
 				return;
-
-			if (alpha >= 0.0f && alpha <= 1.0f)
-			{
-				interpolationData.Alpha = alpha;
-			}
 
 			int   ticks = interpolationData.ToTick - interpolationData.FromTick;
 			float tick  = interpolationData.FromTick + interpolationData.Alpha * ticks;

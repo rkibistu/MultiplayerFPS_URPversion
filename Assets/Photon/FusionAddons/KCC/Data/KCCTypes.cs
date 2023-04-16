@@ -81,7 +81,6 @@ namespace Fusion.KCC
 		SnapToGround         = 2,
 		PredictionCorrection = 3,
 		AntiJitter           = 4,
-		CCD                  = 5,
 	}
 
 	[Flags]
@@ -92,7 +91,6 @@ namespace Fusion.KCC
 		SnapToGround         = 1 << EKCCFeature.SnapToGround,
 		PredictionCorrection = 1 << EKCCFeature.PredictionCorrection,
 		AntiJitter           = 1 << EKCCFeature.AntiJitter,
-		CCD                  = 1 << EKCCFeature.CCD,
 		All                  = -1
 	}
 
@@ -104,28 +102,5 @@ namespace Fusion.KCC
 		Box     = 3,
 		Mesh    = 4,
 		Terrain = 5,
-	}
-
-	/// <summary>
-	/// Defines collision type between KCC and overlapping collider surface calculated from depenetration or trigger.
-    /// <list type="bullet">
-    /// <item><description>None - Default.</description></item>
-    /// <item><description>Ground - Angle between Up and normalized depenetration vector is between 0 and KCCData.MaxGroundAngle.</description></item>
-    /// <item><description>Slope - Angle between Up and normalized depenetration vector is between KCCData.MaxGroundAngle and (90 - KCCData.MaxWallAngle).</description></item>
-    /// <item><description>Wall - Angle between Back and normalized depenetration vector is between -KCCData.MaxWallAngle and KCCData.MaxWallAngle.</description></item>
-    /// <item><description>Hang - Angle between Back and normalized depenetration vector is between -30 and -KCCData.MaxWallAngle.</description></item>
-    /// <item><description>Top - Angle between Back and normalized depenetration vector is lower than -30.</description></item>
-    /// <item><description>Trigger - Overlapping collider - trigger. Penetration is unknown.</description></item>
-    /// </list>
-	/// </summary>
-	public enum ECollisionType
-	{
-		None    = 0,
-		Ground  = 1,
-		Slope   = 1 << 1,
-		Wall    = 1 << 2,
-		Hang    = 1 << 3,
-		Top     = 1 << 4,
-		Trigger = 1 << 5,
 	}
 }
