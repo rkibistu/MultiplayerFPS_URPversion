@@ -1066,7 +1066,7 @@ MonoBehaviour:
   _weaponSlot: 2
   _displayName: Shotgun
   _icon: {fileID: 21300000, guid: 7dfa3cd000010e94abbb885a32e4e2f1, type: 3}
-  _pickableWeaponPrefab: {fileID: 1888223850047887289, guid: 67d423925ec9d9f428b1b2305d7e1c90,
+  _pickableWeaponPrefab: {fileID: 1888223850047887289, guid: 53bcaf1b88d11764cb5c43f04dbd1f7a,
     type: 3}
   _damageGrenadeMagazine: {fileID: 8460003482236707314}
   _smokeGrenadeMagazine: {fileID: 5261421233990681073}
@@ -4026,7 +4026,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _interpolationDataSource: 0
   _priority: 5
-  _fireParticle: {fileID: 1067724143266150, guid: 3ca3360192844644c8b25267ca5f4c64,
+  _fireParticle: {fileID: 8136334730752116704, guid: 7e7ed7f81e4ba764c9669da25501c1cb,
     type: 3}
   _fireParticleReturnTime: 10
   _fireAudioEffectsRoot: {fileID: 310818573871823364}
