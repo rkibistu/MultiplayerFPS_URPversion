@@ -1031,7 +1031,7 @@ MonoBehaviour:
   SimulationBehaviours: []
 --- !u!95 &1178353988913261039
 Animator:
-  serializedVersion: 4
+  serializedVersion: 5
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -1048,7 +1048,7 @@ Animator:
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorControllerStateOnDisable: 0
+  m_KeepAnimatorStateOnDisable: 0
 --- !u!114 &2125923974318146488
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1066,7 +1066,8 @@ MonoBehaviour:
   _weaponSlot: 1
   _displayName: BlasterA
   _icon: {fileID: 21300000, guid: 7dfa3cd000010e94abbb885a32e4e2f1, type: 3}
-  _pickableWeaponPrefab: {fileID: 1888223850047887289, guid: 67d423925ec9d9f428b1b2305d7e1c90, type: 3}
+  _pickableWeaponPrefab: {fileID: 1888223850047887289, guid: 67d423925ec9d9f428b1b2305d7e1c90,
+    type: 3}
   _damageGrenadeMagazine: {fileID: 8460003482236707314}
   _smokeGrenadeMagazine: {fileID: 5261421233990681073}
 --- !u!114 &-2089555843288405248
@@ -2393,7 +2394,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _interpolationDataSource: 0
   _priority: 10
-  _projectilePrefab: {fileID: 6898088108902662735, guid: 247265ff6d1517e4db06094c020e046c, type: 3}
+  _projectilePrefab: {fileID: 6898088108902662735, guid: 247265ff6d1517e4db06094c020e046c,
+    type: 3}
   _projectilesPerShot: 1
   _dispersion: 1
 --- !u!114 &1052653433463448226
@@ -2410,8 +2412,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _interpolationDataSource: 0
   _priority: 5
-  _fireParticle: {fileID: 1067724143266150, guid: 3ca3360192844644c8b25267ca5f4c64, type: 3}
-  _fireParticleReturnTime: 10
+  _fireParticle: {fileID: 0}
+  _fireParticleReturnTime: 0
   _fireAudioEffectsRoot: {fileID: 310818573871823364}
   _fireSound:
     Clips:
@@ -2612,7 +2614,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4982191285055074082}
-  m_LocalRotation: {x: 0.0000000079466265, y: 0.000000029802322, z: -0.000000014901161, w: 1}
+  m_LocalRotation: {x: 0.0000000079466265, y: 0.000000029802322, z: -0.000000014901161,
+    w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.099999994, y: 0.1, z: 0.10000002}
   m_ConstrainProportionsScale: 0
@@ -2962,7 +2965,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5623297724429813379}
-  m_LocalRotation: {x: 0.0000000079466265, y: 0.000000029802322, z: -0.000000014901161, w: 1}
+  m_LocalRotation: {x: 0.0000000079466265, y: 0.000000029802322, z: -0.000000014901161,
+    w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.099999994, y: 0.1, z: 0.10000002}
   m_ConstrainProportionsScale: 0
@@ -4003,7 +4007,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _interpolationDataSource: 0
   _priority: 10
-  _projectilePrefab: {fileID: 2316645132702749518, guid: bd2b46b60d1e5be4bbdc91c78ee3183c, type: 3}
+  _projectilePrefab: {fileID: 2316645132702749518, guid: bd2b46b60d1e5be4bbdc91c78ee3183c,
+    type: 3}
   _projectilesPerShot: 1
   _dispersion: 1
 --- !u!114 &595282523861008285
@@ -4020,7 +4025,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _interpolationDataSource: 0
   _priority: 5
-  _fireParticle: {fileID: 1067724143266150, guid: 3ca3360192844644c8b25267ca5f4c64, type: 3}
+  _fireParticle: {fileID: 1067724143266150, guid: c2dbb501b859dc340a180f3b13d813aa,
+    type: 3}
   _fireParticleReturnTime: 10
   _fireAudioEffectsRoot: {fileID: 310818573871823364}
   _fireSound:
@@ -4194,7 +4200,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _interpolationDataSource: 0
   _priority: 10
-  _projectilePrefab: {fileID: 6898088108902662735, guid: 9607ea54d72a96240a991e3cbcb8e5e2, type: 3}
+  _projectilePrefab: {fileID: 6898088108902662735, guid: 9607ea54d72a96240a991e3cbcb8e5e2,
+    type: 3}
   _projectilesPerShot: 1
   _dispersion: 1
 --- !u!114 &5275721094555489154
@@ -4211,8 +4218,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _interpolationDataSource: 0
   _priority: 5
-  _fireParticle: {fileID: 1067724143266150, guid: 3ca3360192844644c8b25267ca5f4c64, type: 3}
-  _fireParticleReturnTime: 10
+  _fireParticle: {fileID: 0}
+  _fireParticleReturnTime: 0
   _fireAudioEffectsRoot: {fileID: 310818573871823364}
   _fireSound:
     Clips:
